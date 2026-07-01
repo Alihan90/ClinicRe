@@ -4,29 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RehabAssessment - Цифрові Шкали</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <style>
-        /* Стилі для друку медичного звіту */
+        /* Налаштування для системного друку: показує ЛИШЕ блінк звіту і ховає весь інтерфейс програми */
         @media print {
-            body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
-            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            #main-interface, #auth-screen { display: none !important; }
+            #print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
         }
-        /* Великі зони для тапання на смартфонах */
         .tap-target { min-height: 48px; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
 
-    <div id="auth-screen" class="flex-1 flex items-center justify-center p-4">
+    <div id="auth-screen" class="print:hidden flex-1 flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-slate-100">
             <div class="text-center mb-8">
                 <div class="inline-flex p-3 bg-blue-50 rounded-full text-blue-600 mb-3">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                 </div>
                 <h1 class="text-2xl font-bold text-slate-900">RehabAssessment</h1>
-                <p class="text-slate-500 text-sm mt-1">Оберіть свій профіль для початку роботи</p>
+                <p class="text-slate-500 text-sm mt-1">Оберіть профіль фізичного терапевта</p>
             </div>
             
             <div class="space-y-3">
@@ -43,12 +45,12 @@
         </div>
     </div>
 
-    <div id="main-interface" class="hidden flex-1 flex flex-col">
+    <div id="main-interface" class="print:hidden hidden flex-1 flex flex-col">
         <header class="bg-white border-b border-slate-200 px-4 py-3 sticky top-0 z-10 shadow-sm">
             <div class="max-w-4xl mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-2">
                     <span class="font-bold text-lg text-blue-600 tracking-tight">RehabApp</span>
-                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-medium">MVP</span>
+                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-medium">PWA</span>
                 </div>
                 <div class="flex items-center space-x-3">
                     <span id="user-display" class="text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1 rounded-lg"></span>
@@ -68,26 +70,25 @@
                     <form id="add-patient-form" onsubmit="createNewPatient(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">ПІБ Пацієнта</label>
-                            <input type="text" id="p-name" required placeholder="Прим. Іванов І.І." class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="text" id="p-name" required placeholder="Прим. Іванов І.І." class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Вік</label>
-                            <input type="number" id="p-age" required placeholder="Прим. 45" class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="number" id="p-age" required placeholder="Прим. 45" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Клінічний діагноз</label>
-                            <input type="text" id="p-diag" required placeholder="Прим. САК, стан після ОНМК" class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="text" id="p-diag" required placeholder="Прим. Наслідки ГПМК" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div class="md:col-span-3 flex justify-end">
-                            <button type="submit" class="tap-target bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-xl transition shadow-sm">Додати в базу</button>
+                            <button type="submit" class="tap-target bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-xl transition shadow-sm">Додати пацієнта</button>
                         </div>
                     </form>
                 </div>
 
                 <div class="space-y-3">
-                    <h2 class="text-xl font-bold text-slate-900">Електронні картки активних пацієнтів</h2>
-                    <div id="patients-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        </div>
+                    <h2 class="text-xl font-bold text-slate-900">Реабілітаційні картки пацієнтів</h2>
+                    <div id="patients-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                 </div>
             </div>
 
@@ -100,29 +101,28 @@
                     <div>
                         <span class="text-xs font-bold uppercase text-blue-600 bg-blue-50 px-2 py-1 rounded">Пацієнт</span>
                         <h2 id="current-p-name" class="text-2xl font-bold text-slate-900 mt-1"></h2>
-                        <p class="text-slate-600 mt-1">Вік: <span id="current-p-age" class="font-medium"></span> років | Діагноз: <span id="current-p-diag" class="font-medium text-slate-900"></span></p>
+                        <p class="text-slate-600 mt-1">Вік: <span id="current-p-age" class="font-medium"></span> р. | Діагноз: <span id="current-p-diag" class="font-medium text-slate-900"></span></p>
                     </div>
                     <button onclick="openNewTest()" class="tap-target bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-3 rounded-xl shadow-sm transition flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                        Провести тест RASS
+                        Провести оцінку RASS
                     </button>
                 </div>
 
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <h3 class="text-lg font-bold text-slate-900 mb-4">Динаміка стану за шкалою RASS</h3>
+                    <h3 class="text-lg font-bold text-slate-900 mb-4">Динаміка та клінічні протоколи результатів</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="border-b border-slate-200 text-slate-400 text-xs uppercase font-semibold">
-                                    <th class="py-3 px-4">Дата та час</th>
-                                    <th class="py-3 px-4">Спеціаліст</th>
-                                    <th class="py-3 px-4">Бали RASS</th>
-                                    <th class="py-3 px-4">Клінічний статус</th>
-                                    <th class="py-3 px-4 text-center">Дії</th>
+                                    <th class="py-3 px-2">Дата / Час</th>
+                                    <th class="py-3 px-2">Фахівець</th>
+                                    <th class="py-3 px-2 text-center">Бали</th>
+                                    <th class="py-3 px-2">Статус</th>
+                                    <th class="py-3 px-2 text-center">Експорт звіту</th>
                                 </tr>
                             </thead>
-                            <tbody id="history-table-body" class="text-sm divide-y divide-slate-100">
-                                </tbody>
+                            <tbody id="history-table-body" class="text-sm divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
@@ -133,67 +133,65 @@
                     <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900">Шкала оцінки седації-ажитації Richmond (RASS)</h2>
-                            <p class="text-slate-500 text-sm mt-1">Оберіть один критерій, який найкраще описує поточний стан пацієнта</p>
+                            <p class="text-slate-500 text-sm mt-1">Оберіть клінічний критерій, який відповідає стану пацієнта</p>
                         </div>
                         <button onclick="cancelTest()" class="text-slate-400 hover:text-slate-600 text-sm">Скасувати</button>
                     </div>
 
                     <form id="rass-form" onchange="calculateRass()" class="space-y-2">
                         <div class="p-3 bg-rose-50 rounded-xl border border-rose-100 space-y-2">
-                            <span class="text-xs font-bold text-rose-700 uppercase tracking-wider block">Рівні Ажитації / Гіперактивності</span>
-                            
+                            <span class="text-xs font-bold text-rose-700 uppercase tracking-wider block">Гіперактивність та ажитація</span>
                             <label class="flex items-start p-2 hover:bg-white rounded-lg cursor-pointer transition">
                                 <input type="radio" name="rass-score" value="+4" class="mt-1 mr-3 h-4 w-4 text-blue-600">
-                                <div><span class="font-bold text-rose-700">+4 Бойовий</span> — Явно агресивний, буйний, становить загрозу.</div>
+                                <div><span class="font-bold text-rose-700">+4 Бойовий</span> — Агресивний, буйний, становить небезпеку для персоналу.</div>
                             </label>
                             <label class="flex items-start p-2 hover:bg-white rounded-lg cursor-pointer transition">
                                 <input type="radio" name="rass-score" value="+3" class="mt-1 mr-3 h-4 w-4 text-blue-600">
-                                <div><span class="font-bold text-rose-600">+3 Дуже ажитований</span> — Агресивний, намагається видалити трубки, катетери.</div>
+                                <div><span class="font-bold text-rose-600">+3 Дуже ажитований</span> — Намагається вирвати катетери, трубки; некерований.</div>
                             </label>
                             <label class="flex items-start p-2 hover:bg-white rounded-lg cursor-pointer transition">
                                 <input type="radio" name="rass-score" value="+2" class="mt-1 mr-3 h-4 w-4 text-blue-600">
-                                <div><span class="font-bold text-rose-500">+2 Ажитований</span> — Часті нецілеспрямовані рухи, бореться з апаратом ШВЛ.</div>
+                                <div><span class="font-bold text-rose-500">+2 Ажитований</span> — Нецілеспрямовані рухи, боротьба з апаратом ШВЛ.</div>
                             </label>
                             <label class="flex items-start p-2 hover:bg-white rounded-lg cursor-pointer transition">
                                 <input type="radio" name="rass-score" value="+1" class="mt-1 mr-3 h-4 w-4 text-blue-600">
-                                <div><span class="font-bold text-rose-400">+1 Неспокійний</span> — Тривожний, але рухи не агресивні.</div>
+                                <div><span class="font-bold text-rose-400">+1 Неспокійний</span> — Тривожний, помірні неагресивні рухи.</div>
                             </label>
                         </div>
 
                         <label class="flex items-start p-4 bg-slate-100 rounded-xl border border-slate-200 cursor-pointer transition">
                             <input type="radio" name="rass-score" value="0" class="mt-1 mr-3 h-4 w-4 text-blue-600" checked>
-                            <div><span class="font-bold text-slate-700">0 Уважний і спокійний</span> — Нормальний базовий стан.</div>
+                            <div><span class="font-bold text-slate-700">0 Уважний і спокійний</span> — Нормальний спокійний стан пацієнта.</div>
                         </label>
 
                         <div class="p-3 bg-blue-50 rounded-xl border border-blue-100 space-y-2">
-                            <span class="text-xs font-bold text-blue-700 uppercase tracking-wider block">Рівні Седації (Реакція на вербальні / фізичні стимули)</span>
-                            
+                            <span class="text-xs font-bold text-blue-700 uppercase tracking-wider block">Рівні седації (Реакція на зовнішні подразники)</span>
                             <label class="flex items-start p-2 hover:bg-white rounded-lg cursor-pointer transition">
                                 <input type="radio" name="rass-score" value="-1" class="mt-1 mr-3 h-4 w-4 text-blue-600">
-                                <div><span class="font-bold text-blue-500">-1 Сонливий</span> — Не повністю уважний, але відкриває очі на голос > 10 секунд.</div>
+                                <div><span class="font-bold text-blue-500">-1 Сонливий</span> — Прокидається на голос, утримує зоровий контакт > 10 секунд.</div>
                             </label>
                             <label class="flex items-start p-2 hover:bg-white rounded-lg cursor-pointer transition">
                                 <input type="radio" name="rass-score" value="-2" class="mt-1 mr-3 h-4 w-4 text-blue-600">
-                                <div><span class="font-bold text-blue-600">-2 Легка седація</span> — Прокидається на голос, контакт очима < 10 секунд.</div>
+                                <div><span class="font-bold text-blue-600">-2 Легка седація</span> — Прокидається на голос, контакт очима триває < 10 секунд.</div>
                             </label>
                             <label class="flex items-start p-2 hover:bg-white rounded-lg cursor-pointer transition">
                                 <input type="radio" name="rass-score" value="-3" class="mt-1 mr-3 h-4 w-4 text-blue-600">
-                                <div><span class="font-bold text-blue-700">-3 Помірна седація</span> — Рухається або відкриває очі на голос, без зорового контакту.</div>
+                                <div><span class="font-bold text-blue-700">-3 Помірна седація</span> — Реагує на голос рухом або відкриттям очей, без контакту.</div>
                             </label>
                             <label class="flex items-start p-2 hover:bg-white rounded-lg cursor-pointer transition">
                                 <input type="radio" name="rass-score" value="-4" class="mt-1 mr-3 h-4 w-4 text-blue-600">
-                                <div><span class="font-bold text-indigo-800">-4 Глибока седація</span> — На голос не реагує, є рухи на біль.</div>
+                                <div><span class="font-bold text-indigo-800">-4 Глибока седація</span> — На голос не реагує, реагує рухом лише на біль.</div>
                             </label>
                             <label class="flex items-start p-2 hover:bg-white rounded-lg cursor-pointer transition">
                                 <input type="radio" name="rass-score" value="-5" class="mt-1 mr-3 h-4 w-4 text-blue-600">
-                                <div><span class="font-bold text-slate-900">-5 Непробудна кома</span> — Повна відсутність реакцій.</div>
+                                <div><span class="font-bold text-slate-900">-5 Непробудна кома</span> — Повна відсутність будь-яких реакцій на біль та голос.</div>
                             </label>
                         </div>
                     </form>
 
                     <div class="mt-6 p-4 bg-slate-900 text-white rounded-xl flex justify-between items-center">
                         <div>
-                            <div class="text-xs text-slate-400 uppercase tracking-wide">Клінічний підсумок:</div>
+                            <div class="text-xs text-slate-400 uppercase tracking-wide">Поточний підсумок:</div>
                             <div id="live-interpretation" class="font-semibold text-lg text-emerald-400">0 | Уважний і спокійний</div>
                         </div>
                         <button onclick="saveTestResult()" class="tap-target bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-bold transition shadow-md">Зберегти в карту</button>
@@ -203,33 +201,37 @@
         </main>
     </div>
 
-    <div id="print-area" class="hidden p-8 bg-white text-black max-w-2xl mx-auto">
-        <div class="text-center border-b-2 border-slate-800 pb-4 mb-6">
-            <h1 class="text-xl font-bold uppercase tracking-wide">Протокол клінічного обстеження</h1>
-            <p class="text-sm">Автоматизований звіт системи RehabAssessment</p>
+    <div id="print-area" class="hidden p-10 bg-white text-black max-w-2xl mx-auto border border-slate-300 rounded shadow-sm">
+        <div class="text-center border-b-4 border-blue-900 pb-4 mb-6">
+            <h1 class="text-2xl font-bold uppercase tracking-wider text-blue-900">Протокол клінічного оцінювання стану пацієнта</h1>
+            <p class="text-sm text-slate-600 mt-1">Автоматизована медична виписка системи RehabAssessment PWA</p>
         </div>
-        <div class="space-y-4 mb-8">
-            <p><strong>Медичний фахівець:</strong> <span id="print-doc"></span></p>
-            <p><strong>Пацієнт (ПІБ):</strong> <span id="print-p-name"></span></p>
-            <p><strong>Вік:</strong> <span id="print-p-age"></span> років</p>
-            <p><strong>Клінічний діагноз:</strong> <span id="print-p-diag"></span></p>
+        
+        <div class="grid grid-cols-2 gap-4 mb-8 text-sm bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div><strong>Пацієнт (ПІБ):</strong> <span id="print-p-name" class="font-semibold text-base"></span></div>
+            <div><strong>Вік пацієнта:</strong> <span id="print-p-age" class="font-semibold"></span> р.</div>
+            <div class="col-span-2"><strong>Клінічний діагноз:</strong> <span id="print-p-diag" class="font-semibold"></span></div>
         </div>
-        <div class="border border-slate-400 p-4 rounded bg-slate-50">
-            <h2 class="font-bold mb-2">Результат тестування:</h2>
-            <p class="text-lg"><strong>Шкала:</strong> Ричмондська шкала седації-ажитації (RASS)</p>
-            <p class="text-2xl font-bold text-blue-900 mt-2">Показник: <span id="print-score"></span> балів</p>
-            <p class="mt-1"><strong>Статус:</strong> <span id="print-interp"></span></p>
-            <p class="text-xs text-slate-500 mt-4">Дата генерації запису: <span id="print-date"></span></p>
+
+        <div class="border-2 border-blue-900 p-6 rounded-xl bg-blue-50/50 mb-8">
+            <h2 class="font-bold text-lg text-blue-900 mb-2 border-b pb-1">Результати тестування за медичною шкалою:</h2>
+            <p class="text-base"><strong>Методика оцінки:</strong> Ричмондська шкала седації-ажитації (Richmond Agitation-Sedation Scale / RASS)</p>
+            <div class="my-4 p-4 bg-white rounded-lg border border-slate-300">
+                <p class="text-3xl font-extrabold text-blue-900">Показник: <span id="print-score"></span> балів</p>
+                <p class="mt-2 text-base text-slate-900"><strong>Клінічна інтерпретація:</strong> <span id="print-interp" class="font-semibold"></span></p>
+            </div>
+            <p class="text-xs text-slate-500">Дата та час фіксації показника: <span id="print-date" class="font-medium"></span></p>
+            <p class="text-xs text-slate-500 mt-1">Оцінку провів спеціаліст: <span id="print-doc" class="font-medium text-slate-900"></span></p>
         </div>
-        <div class="mt-20 flex justify-between text-xs text-slate-400">
-            <div>Підпис фахівця: ___________________</div>
-            <div>Печатка установи</div>
+
+        <div class="mt-24 flex justify-between items-center text-sm">
+            <div class="border-t border-black w-48 text-center pt-1 text-xs">Підпис фізичного терапевта</div>
+            <div class="border border-dashed border-slate-400 w-24 h-24 flex items-center justify-center text-xs text-slate-400 rounded">М. П. Установи</div>
         </div>
     </div>
 
 
     <script>
-        // Глобальний стан додатку
         let appState = {
             currentDoctor: null,
             patients: JSON.parse(localStorage.getItem('rehab_patients')) || [],
@@ -237,16 +239,16 @@
         };
 
         const rMap = {
-            "+4": "Бойовий (Combative) — Агресивний, буйний",
-            "+3": "Дуже ажитований — Знімає трубки, катетери",
-            "+2": "Ажитований — Часті нецілеспрямовані рухи",
-            "+1": "Неспокійний — Тривожний, рухи не агресивні",
-            "0": "Уважний і спокійний (Норма)",
-            "-1": "Сонливий — Прокидається на голос, контакт очима > 10 сек",
-            "-2": "Легка седація — Прокидається на голос, контакт очима < 10 сек",
-            "-3": "Помірна седація — Рухається / відкриває очі на голос, без контакту",
-            "-4": "Глибока седація — Реагує лише на фізичне подразнення (біль)",
-            "-5": "Непробудна кома — Відсутність реакцій"
+            "+4": "Бойовий (Combative) — Агресивний, буйний, загроза для оточуючих",
+            "+3": "Дуже ажитований — Знімає трубки, катетери, агресія до персоналу",
+            "+2": "Ажитований — Нецілеспрямовані хаотичні рухи, бореться з апаратом ШВЛ",
+            "+1": "Неспокійний — Тривожний, але рухи не агресивні та не енергійні",
+            "0": "Уважний і спокійний (Нормальний базовий стан)",
+            "-1": "Сонливий — Не повністю уважний, прокидається на голос, тримає контакт очима > 10 сек",
+            "-2": "Легка седація — Прокидається на голос, але контакт очима триває менше 10 секунд",
+            "-3": "Помірна седація — Рухається або відкриває очі на голос, проте зоровий контакт відсутній",
+            "-4": "Глибока седація — На мовленнєві стимули не реагує, є рухи лише на фізичний біль",
+            "-5": "Непробудна кома — Повна відсутність будь-яких реакцій як на голос, так і на біль"
         };
 
         window.onload = function() {
@@ -281,12 +283,12 @@
             const container = document.getElementById('patients-list');
             container.innerHTML = '';
             if (appState.patients.length === 0) {
-                container.innerHTML = `<p class="text-slate-400 text-sm italic col-span-2 py-4">У базі немає зареєстрованих пацієнтів.</p>`;
+                container.innerHTML = `<p class="text-slate-400 text-sm italic col-span-2 py-4 text-center">У локальній базі немає пацієнтів.</p>`;
                 return;
             }
             appState.patients.forEach(p => {
                 const lastTest = p.history && p.history.length > 0 ? p.history[p.history.length - 1] : null;
-                const testText = lastTest ? `Останній RASS: ${lastTest.score} (${lastTest.date.split(' ')[0]})` : 'Тестувань ще не було';
+                const testText = lastTest ? `Останній RASS: ${lastTest.score} (${lastTest.date.split(' ')[0]})` : 'Тестувань ще не проводилось';
                 const card = document.createElement('div');
                 card.className = "bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-400 cursor-pointer transition flex flex-col justify-between";
                 card.onclick = () => viewPatientCard(p.id);
@@ -297,7 +299,7 @@
                     </div>
                     <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-medium ${lastTest ? 'text-blue-600' : 'text-slate-400'}">
                         <span>${testText}</span>
-                        <span class="text-blue-500 font-semibold">Відкрити карту →</span>
+                        <span class="text-blue-500 font-semibold">Карта пацієнта →</span>
                     </div>
                 `;
                 container.appendChild(card);
@@ -334,24 +336,29 @@
             const tbody = document.getElementById('history-table-body');
             tbody.innerHTML = '';
             if (!patient.history || patient.history.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Історія порожня. Проведіть перший тест.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Історія оцінок пуста. Проведіть первинний тест.</td></tr>`;
                 return;
             }
             [...patient.history].reverse().forEach((record) => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50";
+                tr.className = "hover:bg-slate-50 transition";
                 tr.innerHTML = `
-                    <td class="py-3 px-4 font-medium">${record.date}</td>
-                    <td class="py-3 px-4 text-slate-600">${record.doctor}</td>
-                    <td class="py-3 px-4 font-bold text-blue-600 text-base">${record.score}</td>
-                    <td class="py-3 px-4 text-xs font-medium max-w-xs truncate">${record.interpretation}</td>
-                    <td class="py-3 px-4 text-center space-x-1 flex justify-center items-center">
-                        <button onclick="shareSingleRecord('${patient.id}', '${record.date}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition shadow-sm">
-                            Поділитись
-                        </button>
-                        <button onclick="printSingleRecord('${patient.id}', '${record.date}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded text-xs transition">
-                            Друк
-                        </button>
+                    <td class="py-3 px-2 font-medium">${record.date}</td>
+                    <td class="py-3 px-2 text-slate-600 text-xs">${record.doctor}</td>
+                    <td class="py-3 px-2 font-extrabold text-blue-600 text-center text-base">${record.score}</td>
+                    <td class="py-3 px-2 text-xs font-medium max-w-xs truncate">${record.interpretation.split('—')[0]}</td>
+                    <td class="py-3 px-2 text-center">
+                        <div class="inline-flex rounded-lg shadow-sm gap-1">
+                            <button onclick="exportToPDF('${patient.id}', '${record.date}', true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-l-md text-xs font-bold transition flex items-center">
+                                Надіслати PDF
+                            </button>
+                            <button onclick="exportToPDF('${patient.id}', '${record.date}', false)" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 text-xs font-bold transition">
+                                Стягнути
+                            </button>
+                            <button onclick="triggerSystemPrint('${patient.id}', '${record.date}')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1.5 rounded-r-md text-xs font-medium transition">
+                                Друк
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -399,42 +406,8 @@
             renderHistoryTable(patient);
         }
 
-        // --- НОВА ФУНКЦІЯ: НАЙКРАЩИЙ ШЕРИНГ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ ---
-        function shareSingleRecord(patientId, recordDate) {
-            const patient = appState.patients.find(p => p.id === patientId);
-            const record = patient.history.find(r => r.date === recordDate);
-
-            // Формуємо красивий структурований текст для відправки в месенджери
-            const reportText = 
-                `📋 МЕДИЧНИЙ ЗВІТ ОБСТЕЖЕННЯ\n` +
-                `-----------------------------\n` +
-                `👤 Пацієнт: ${patient.name} (${patient.age} р.)\n` +
-                `🩺 Діагноз: ${patient.diagnosis}\n` +
-                `📊 Оцінка: Шкала RASS (Richmond)\n` +
-                `📈 Результат: ${record.score} балів\n` +
-                `🔍 Статус: ${record.interpretation}\n` +
-                `-----------------------------\n` +
-                `📅 Дата тесту: ${record.date}\n` +
-                `👨‍⚕️ Фахівець: ${record.doctor}\n` +
-                `🤖 Згенеровано в RehabAssessment`;
-
-            // Використовуємо рідне меню «Поділитися» на смартфоні
-            if (navigator.share) {
-                navigator.share({
-                    title: `Звіт RASS: ${patient.name}`,
-                    text: reportText
-                }).catch(err => console.log('Помилка шерингу:', err));
-            } else {
-                // Резервний варіант для звичайних комп'ютерів (копіює в буфер обміну)
-                navigator.clipboard.writeText(reportText);
-                alert("Текст медичного звіту скопійовано! Тепер ви можете просто вставити його (Ctrl+V) у будь-який чат чи месенджер.");
-            }
-        }
-
-        function printSingleRecord(patientId, recordDate) {
-            const patient = appState.patients.find(p => p.id === patientId);
-            const record = patient.history.find(r => r.date === recordDate);
-
+        // Внутрішня функція збирання даних бланку
+        function fillPrintTemplate(patient, record) {
             document.getElementById('print-doc').innerText = record.doctor;
             document.getElementById('print-p-name').innerText = patient.name;
             document.getElementById('print-p-age').innerText = patient.age;
@@ -442,7 +415,59 @@
             document.getElementById('print-score').innerText = record.score;
             document.getElementById('print-interp').innerText = record.interpretation;
             document.getElementById('print-date').innerText = record.date;
+        }
 
+        // ================= ЦЕНТРАЛЬНА СИСТЕМА ГЕНЕРАЦІЇ ТА ШЕРИНГУ PDF =================
+        function exportToPDF(patientId, recordDate, triggerShare = false) {
+            const patient = appState.patients.find(p => p.id === patientId);
+            const record = patient.history.find(r => r.date === recordDate);
+
+            fillPrintTemplate(patient, record);
+
+            const element = document.getElementById('print-area');
+            element.classList.remove('hidden'); // Відображаємо елемент для захоплення двигуном PDF
+
+            const sanitizedName = patient.name.replace(/\s+/g, '_');
+            const pdfOptions = {
+                margin:       [1.5, 1.5, 1.5, 1.5],
+                filename:     `Zvit_RASS_${sanitizedName}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, logging: false, useCORS: true },
+                jsPDF:        { unit: 'cm', format: 'a4', orientation: 'portrait' }
+            };
+
+            if (triggerShare) {
+                // Генерація файлу в оперативну пам'ять (Blob) для відправки через Web Share API
+                html2pdf().set(pdfOptions).from(element).output('blob').then(function(pdfBlob) {
+                    element.classList.add('hidden');
+                    const pdfFile = new File([pdfBlob], pdfOptions.filename, { type: 'application/pdf' });
+                    
+                    // Перевірка підтримки надсилання файлів пристроєм (iOS / Android)
+                    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                        navigator.share({
+                            files: [pdfFile],
+                            title: `Протокол RASS: ${patient.name}`,
+                            text: `Надсилаємо офіційний клінічний звіт.`
+                        }).catch(err => console.log('Скасування або помилка шерингу:', err));
+                    } else {
+                        // Якщо браузер застарілий або блокує пряме відправлення файлів — скачуємо файл на телефон
+                        alert("Мобільний браузер заблокував автоматичне відкриття Telegram. Файл зараз завантажиться у ваш телефон — ви зможете прикріпити його до чату як звичайний документ.");
+                        html2pdf().set(pdfOptions).from(element).save();
+                    }
+                });
+            } else {
+                // Звичайне пряме завантаження файлу на пристрій
+                html2pdf().set(pdfOptions).from(element).save().then(() => {
+                    element.classList.add('hidden');
+                });
+            }
+        }
+
+        // Традиційний друк (для комп'ютерів чи принтерів)
+        function triggerSystemPrint(patientId, recordDate) {
+            const patient = appState.patients.find(p => p.id === patientId);
+            const record = patient.history.find(r => r.date === recordDate);
+            fillPrintTemplate(patient, record);
             window.print();
         }
     </script>
