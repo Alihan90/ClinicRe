@@ -3,860 +3,1064 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RehabAssessment Pro - Клінічні Шкали</title>
+    <title>Re_Hab: Professional Rehabilitation Workspace</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <style>
-        @media print {
-            body { background: white; color: black; }
-            #main-interface, #auth-screen { display: none !important; }
-            #print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        medical: { 50: '#f0f7ff', 100: '#e0effe', 500: '#0284c7', 600: '#0369a1', 700: '#075985', 900: '#0c4a6e' }
+                    }
+                }
+            }
         }
-        .tap-target { min-height: 48px; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </script>
+    <style>
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .goniometer-card { transform-style: preserve-3d; transition: all 0.2s ease; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-200">
 
-    <div id="auth-screen" class="print:hidden flex-1 flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-slate-100">
-            <div class="text-center mb-8">
-                <div class="inline-flex p-3 bg-blue-50 rounded-full text-blue-600 mb-3">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-medical-600 text-white rounded-xl font-black text-xl tracking-wider shadow-md">Re_H</div>
+                    <div>
+                        <h1 class="font-black text-lg text-slate-900 dark:text-white tracking-tight">Re_Hab Pro</h1>
+                        <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Фізична терапія та клінічні протоколи</p>
+                    </div>
                 </div>
-                <h1 class="text-2xl font-bold text-slate-900">RehabAssessment Pro</h1>
-                <p class="text-slate-500 text-sm mt-1">Цифрова система клінічних шкал та звітів</p>
+                <div class="flex items-center space-x-2 md:hidden">
+                    <button onclick="toggleDarkMode()" class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg">🌙</button>
+                    <span id="doctor-badge-mobile" class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Мамедов А. Ф.</span>
+                </div>
             </div>
-            
-            <div class="space-y-3">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Оберіть профільного фахівця:</label>
-                <button onclick="loginAs('Мамедов А. Ф.')" class="tap-target w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 transition rounded-xl border border-slate-200 font-medium text-left">
-                    <span>Мамедов А. Ф. (Фізична терапія)</span>
-                    <svg class="w-5 h-5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </button>
-                <button onclick="loginAs('Чернова О. В.')" class="tap-target w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 transition rounded-xl border border-slate-200 font-medium text-left">
-                    <span>Чернова О. В. (Неврологічна реабілітація)</span>
-                    <svg class="w-5 h-5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </button>
+
+            <div class="w-full md:max-w-md relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span class="text-slate-400 text-sm">🔍</span>
+                </div>
+                <input type="text" id="global-search" oninput="executeGlobalSearch()" placeholder="Швидкий пошук пацієнта, МКХ-10, шкали або вправи..." class="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border border-transparent rounded-xl outline-none focus:ring-2 focus:ring-medical-500 text-sm transition text-slate-900 dark:text-white">
+                <div id="search-results-dropdown" class="absolute left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto hidden"></div>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-4">
+                <button onclick="toggleDarkMode()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-sm hover:opacity-80">🌓 Тема</button>
+                <div class="bg-medical-50 dark:bg-slate-800 text-medical-700 dark:text-medical-400 px-4 py-2 rounded-xl text-sm font-bold border border-medical-100 dark:border-slate-700">
+                    🧑‍⚕️ Спеціаліст: <span id="active-doctor-name">Мамедов Аліхан Фаіг Огли</span>
+                </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <div id="main-interface" class="print:hidden hidden flex-1 flex flex-col">
-        <header class="bg-white border-b border-slate-200 px-4 py-3 sticky top-0 z-10 shadow-sm">
-            <div class="max-w-4xl mx-auto flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <span class="font-bold text-lg text-blue-600 tracking-tight">RehabApp</span>
-                    <span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full font-medium">Full-Interactive V3</span>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <span id="user-display" class="text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1 rounded-lg"></span>
-                    <button onclick="logout()" class="text-xs text-rose-600 hover:underline">Вийти</button>
-                </div>
+    <nav class="bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 overflow-x-auto custom-scroll">
+        <div class="max-w-7xl mx-auto flex space-x-1 py-2">
+            <button onclick="switchTab('patients')" id="tab-btn-patients" class="px-4 py-2.5 rounded-xl font-bold text-sm transition shrink-0 bg-white dark:bg-slate-800 text-medical-600 shadow-sm border border-slate-200 dark:border-slate-700">📋 Картки пацієнтів</button>
+            <button onclick="switchTab('scales')" id="tab-btn-scales" class="px-4 py-2.5 rounded-xl font-bold text-sm transition shrink-0 text-slate-600 dark:text-slate-400 hover:bg-white/50">📊 Реєстр Шкал</button>
+            <button onclick="switchTab('goniometer')" id="tab-btn-goniometer" class="px-4 py-2.5 rounded-xl font-bold text-sm transition shrink-0 text-slate-600 dark:text-slate-400 hover:bg-white/50">📐 Ганіометрія</button>
+            <button onclick="switchTab('exercises')" id="tab-btn-exercises" class="px-4 py-2.5 rounded-xl font-bold text-sm transition shrink-0 text-slate-600 dark:text-slate-400 hover:bg-white/50">🏋️ База вправ</button>
+            <button onclick="switchTab('icd10')" id="tab-btn-icd10" class="px-4 py-2.5 rounded-xl font-bold text-sm transition shrink-0 text-slate-600 dark:text-slate-400 hover:bg-white/50">📖 Довідник МКХ-10</button>
+            <button onclick="switchTab('smart')" id="tab-btn-smart" class="px-4 py-2.5 rounded-xl font-bold text-sm transition shrink-0 text-slate-600 dark:text-slate-400 hover:bg-white/50">🎯 SMART Конструктор</button>
+            <button onclick="switchTab('settings')" id="tab-btn-settings" class="px-4 py-2.5 rounded-xl font-bold text-sm transition shrink-0 text-slate-600 dark:text-slate-400 hover:bg-white/50">⚙️ Налаштування</button>
+        </div>
+    </nav>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+        
+        <div id="back-navigation-container" class="hidden">
+            <button onclick="triggerGlobalBack()" class="inline-flex items-center px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-wider rounded-xl hover:opacity-90 transition">
+                ← Повернутися на головний екран розділу
+            </button>
+        </div>
+
+        <div id="view-patients" class="tab-content space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <h2 class="text-xl font-black text-slate-900 dark:text-white mb-4 flex items-center">
+                    <span class="mr-2">👤</span> Первинна реєстрація медичної карти пацієнта (UA / EN)
+                </h2>
+                <form id="patient-registration-form" onsubmit="registerPatient(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">ПІБ Пацієнта (Українська)</label>
+                        <input type="text" id="reg-name-ua" required placeholder="Прим. Сидоренко Олег Миколайович" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-medical-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Full Name (English)</label>
+                        <input type="text" id="reg-name-en" required placeholder="e.g. Sydorenko Oleh" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-medical-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Вік пацієнта</label>
+                        <input type="number" id="reg-age" required placeholder="Вік (повних років)" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-medical-500 text-sm">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Клінічний діагноз за МКХ-10</label>
+                        <select id="reg-icd10" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-medical-500 text-sm">
+                            <option value="I63">I63 — Церебральний інфаркт (Ішемічний інсульт)</option>
+                            <option value="G80">G80 — Дитячий церебральний параліч (ДЦП)</option>
+                            <option value="M17">M17 — Гонартроз (Артроз колінного суглоба)</option>
+                            <option value="T90">T90 — Наслідки черепно-мозкової травми</option>
+                            <option value="M50">M50 — Ураження міжхребцевих дисків шийного відділу</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Супутні патології</label>
+                        <input type="text" id="reg-comorbidities" placeholder="Гіпертонічна хвороба, ЦД 2 типу" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-medical-500 text-sm">
+                    </div>
+                    <div class="md:col-span-3 flex justify-end">
+                        <button type="submit" class="bg-medical-600 hover:bg-medical-700 text-white font-bold px-6 py-3 rounded-xl shadow-md transition text-sm">Створити електронну карту</button>
+                    </div>
+                </form>
             </div>
-        </header>
 
-        <main class="flex-1 max-w-4xl w-full mx-auto p-4 space-y-6">
-            
-            <div id="dashboard-view" class="space-y-6">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-                        Реєстрація картки пацієнта
-                    </h2>
-                    <form id="add-patient-form" onsubmit="createNewPatient(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="space-y-4">
+                <h3 class="text-xl font-black text-slate-900 dark:text-white">🗂️ Активні реабілітаційні карти</h3>
+                <div id="patients-cards-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+        </div>
+
+        <div id="subview-single-patient" class="hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start gap-4 border-b border-slate-100 dark:border-slate-700 pb-4">
+                    <div>
+                        <span class="text-xs bg-medical-600 text-white font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider">Медична документація</span>
+                        <h2 id="p-card-title-ua" class="text-2xl font-black text-slate-900 dark:text-white mt-2"></h2>
+                        <p id="p-card-title-en" class="text-sm italic text-slate-400"></p>
+                        <p class="text-sm mt-1">Вік: <span id="p-card-age" class="font-bold"></span> р. | <b>Основний діагноз МКХ-10:</b> <span id="p-card-icd" class="text-medical-600 dark:text-medical-400 font-bold"></span></p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="generateMOHReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs uppercase tracking-wide transition shadow-sm">📄 Експорт за стандартами МОЗ</button>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <h3 class="text-sm font-bold uppercase text-slate-500 mb-3">🩺 Реєстрація поточного візиту та моніторинг вітальних функцій</h3>
+                    <form onsubmit="logPatientVisit(event)" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div>
-                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">ПІБ Пацієнта</label>
-                            <input type="text" id="p-name" required placeholder="Прим. Сидоренко О.М." class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">ЧСС (пульс, уд/хв)</label>
+                            <input type="number" id="visit-hr" required value="72" class="w-full p-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-bold">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Вік</label>
-                            <input type="number" id="p-age" required placeholder="Вік" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">АТ (Артеріальний тиск)</label>
+                            <input type="text" id="visit-bp" required value="120/80" placeholder="120/80" class="w-full p-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-bold">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Діагноз / Направлення</label>
-                            <input type="text" id="p-diag" required placeholder="Прим. Інсульт, геміпарез" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">SpO2 (Сатурація, %)</label>
+                            <input type="number" id="visit-spo2" required value="98" class="w-full p-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-bold">
                         </div>
-                        <div class="md:col-span-3 flex justify-end">
-                            <button type="submit" class="tap-target bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-xl transition shadow-sm">Створити картку</button>
+                        <div class="flex items-end">
+                            <button type="submit" class="w-full bg-slate-800 dark:bg-slate-700 hover:opacity-90 text-white font-bold p-2.5 rounded-lg text-xs uppercase transition">Зафіксувати візит</button>
                         </div>
                     </form>
                 </div>
 
-                <div class="space-y-3">
-                    <h2 class="text-xl font-bold text-slate-900">Реабілітаційні картки</h2>
-                    <div id="patients-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-                </div>
-            </div>
-
-            <div id="patient-view" class="hidden space-y-6">
-                <button onclick="showDashboard()" class="inline-flex items-center text-sm font-medium text-blue-600 hover:underline mb-2">
-                    ← Назад до списку пацієнтів
-                </button>
-
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <span class="text-xs font-bold uppercase text-blue-600 bg-blue-50 px-2 py-1 rounded">Активний пацієнт</span>
-                        <h2 id="current-p-name" class="text-2xl font-bold text-slate-900 mt-1"></h2>
-                        <p class="text-slate-600 mt-1">Вік: <span id="current-p-age" class="font-medium"></span> р. | Діагноз: <span id="current-p-diag" class="font-medium text-slate-900"></span></p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div class="space-y-4">
+                        <div class="border border-slate-100 dark:border-slate-700 p-4 rounded-xl">
+                            <h4 class="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wide mb-2">🎯 Встановлені цілі за SMART</h4>
+                            <div id="p-card-smart-goals" class="text-xs text-slate-500 italic">Цілі не згенеровані. Використовуйте конструктор.</div>
+                        </div>
+                        <div class="border border-slate-100 dark:border-slate-700 p-4 rounded-xl">
+                            <h4 class="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wide mb-2">📋 Журнал проведених тестувань та шкал</h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead>
+                                        <tr class="text-slate-400 border-b">
+                                            <th class="pb-2">Дата</th>
+                                            <th class="pb-2">Шкала</th>
+                                            <th class="pb-2 text-center">Бал</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="p-card-scales-log"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                    <button onclick="openCatalogSelection()" class="tap-target bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl shadow-sm transition flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                        Нове обстеження / Шкали
-                    </button>
+
+                    <div class="border border-slate-100 dark:border-slate-700 p-4 rounded-xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wide">📅 Індивідуальний реабілітаційний план</h4>
+                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">Циклічний</span>
+                            </div>
+                            <div id="p-card-rehab-plan" class="space-y-2 max-h-60 overflow-y-auto custom-scroll pr-1 text-xs"></div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t flex gap-2">
+                            <input type="number" id="p-card-plan-days" value="14" class="w-16 p-1 border rounded text-center text-xs font-bold text-slate-900">
+                            <button onclick="rebuildRehabPlanDays()" class="flex-1 bg-medical-600 text-white text-xs font-bold py-2 rounded-lg hover:bg-medical-700">Перебудувати тривалість циклу</button>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <h3 class="text-lg font-bold text-slate-900 mb-4">Журнал клінічних метрик пацієнта</h3>
+                <div class="mt-6 border-t pt-4">
+                    <h4 class="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wide mb-3">📊 Хронологічний моніторинг сесій</h4>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
+                        <table class="w-full text-left text-xs border-collapse">
                             <thead>
-                                <tr class="border-b border-slate-200 text-slate-400 text-xs uppercase font-semibold">
-                                    <th class="py-3 px-2">Дата оцінки</th>
-                                    <th class="py-3 px-2">Медична шкала</th>
-                                    <th class="py-3 px-2 text-center">Результат</th>
-                                    <th class="py-3 px-2">Клінічний висновок</th>
-                                    <th class="py-3 px-2 text-center">Експорт</th>
+                                <tr class="bg-slate-100 dark:bg-slate-900 text-slate-500 uppercase font-mono text-[10px]">
+                                    <th class="p-2">№ Візиту</th>
+                                    <th class="p-2">Дата/Час</th>
+                                    <th class="p-2 text-center">ЧСС</th>
+                                    <th class="p-2 text-center">АТ</th>
+                                    <th class="p-2 text-center">SpO2</th>
                                 </tr>
                             </thead>
-                            <tbody id="history-table-body" class="text-sm divide-y divide-slate-100"></tbody>
+                            <tbody id="p-card-visits-history" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div id="catalog-view" class="hidden space-y-6">
-                <button onclick="backToPatientCard()" class="inline-flex items-center text-sm font-medium text-slate-600 hover:underline">
-                    ← Назад у карту пацієнта
-                </button>
+
+        <div id="view-scales" class="tab-content hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-2">Універсальний Клінічний Каталог</h2>
+                <p class="text-sm text-slate-400">Усі класичні світові шкали реабілітації для дітей та дорослих.</p>
                 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <h2 class="text-xl font-bold text-slate-900 mb-2">Каталог клінічного інструментарію</h2>
-                    <p class="text-slate-500 text-sm mb-6">Оберіть медичний профіль та вікову категорію для фільтрації шкал</p>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-                        <button id="prof-btn-rehab" onclick="setProfile('rehab')" class="tap-target p-4 rounded-xl font-bold border-2 text-left transition flex items-center justify-between bg-blue-600 text-white border-blue-600">
-                            <div>
-                                <span class="block text-lg">🏃‍♂️ Фізична терапія / Реабілітація</span>
-                                <span class="text-xs opacity-80 font-normal">Мобільність, тонус, рівновага, самообслуговування</span>
-                            </div>
-                        </button>
-                        <button id="prof-btn-neuro" onclick="setProfile('neuro')" class="tap-target p-4 rounded-xl font-bold border-2 text-left transition flex items-center justify-between bg-white text-slate-700 border-slate-200 hover:bg-slate-50">
-                            <div>
-                                <span class="block text-lg">🧠 Неврологія й когніція</span>
-                                <span class="text-xs opacity-60 font-normal">Свідомість, інсульти, деменція, седація</span>
-                            </div>
-                        </button>
-                    </div>
+                <div class="flex space-x-2 my-4 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl max-w-sm">
+                    <button onclick="filterScalesCategory('pediatric')" id="scale-filter-pediatric" class="flex-1 py-2 rounded-lg text-xs font-bold text-center bg-white dark:bg-slate-800 shadow-sm text-medical-600">👶 Педіатрична реабілітація</button>
+                    <button onclick="filterScalesCategory('adult')" id="scale-filter-adult" class="flex-1 py-2 rounded-lg text-xs font-bold text-center text-slate-500 hover:text-slate-800">👴 Дорослі пацієнти</button>
+                </div>
 
-                    <div class="bg-slate-100 p-1.5 rounded-xl flex mb-6 max-w-sm">
-                        <button id="age-btn-adults" onclick="setAgeCategory('adults')" class="flex-1 py-2 text-center font-bold text-sm rounded-lg transition bg-white shadow text-blue-600">
-                            👴 Дорослі
-                        </button>
-                        <button id="age-btn-children" onclick="setAgeCategory('children')" class="flex-1 py-2 text-center font-bold text-sm rounded-lg transition text-slate-600 hover:text-slate-900">
-                            👶 Діти
-                        </button>
-                    </div>
+                <div id="scales-categories-container" class="space-y-6"></div>
+            </div>
+        </div>
 
-                    <div class="border-t border-slate-100 pt-4">
-                        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Доступні інтерактивні шкали:</h3>
-                        <div id="scales-grid-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <div id="subview-scale-execution" class="hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div class="border-b pb-3 mb-4">
+                    <h2 id="exec-scale-title" class="text-xl font-black text-slate-900 dark:text-white"></h2>
+                    <p id="exec-scale-desc" class="text-xs text-slate-400 mt-1"></p>
+                </div>
+                
+                <div id="exec-scale-questions-container" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scroll"></div>
+
+                <div class="mt-6 p-5 bg-slate-900 text-white rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Розрахований показник:</span>
+                        <div id="exec-scale-live-result" class="text-lg font-bold text-emerald-400 mt-0.5">0 балів</div>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <select id="exec-scale-target-patient-select" class="p-2.5 bg-slate-800 text-white rounded-lg text-xs font-bold border border-slate-700"></select>
+                        <button onclick="saveExecutedScaleToPatient()" class="bg-medical-600 hover:bg-medical-500 text-white font-bold px-6 py-2.5 rounded-lg text-xs uppercase tracking-wider transition">Зберегти результат</button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div id="test-view" class="hidden space-y-6">
-                <button onclick="cancelTest()" class="inline-flex items-center text-sm font-bold text-slate-600 hover:text-blue-600 transition mb-2 bg-slate-200 px-4 py-2 rounded-xl">
-                    ← Назад до вибору шкал (Скасувати тест)
-                </button>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
-                        <div>
-                            <h2 id="active-scale-title" class="text-xl font-bold text-slate-900">Назва шкали</h2>
-                            <p id="active-scale-desc" class="text-slate-500 text-sm mt-1">Опис...</p>
+        <div id="view-goniometer" class="tab-content hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-2">📐 Апаратний Цифровий Ганіометр</h2>
+                <p class="text-sm text-slate-400 mb-6">Додаток перетворює ваш смартфон на медичний інклінометр. Прикладіть ребро телефона до осі кінцівки пацієнта.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-slate-900 text-white p-6 rounded-2xl flex flex-col items-center justify-between text-center relative overflow-hidden shadow-inner min-h-[300px]">
+                        <div class="z-10">
+                            <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Поточний кут нахилу</span>
+                            <div id="goniometer-live-degree" class="text-7xl font-black text-emerald-400 my-4">0°</div>
+                        </div>
+                        
+                        <div id="goniometer-visual-circle" class="w-24 h-24 rounded-full border-4 border-dashed border-slate-700 flex items-center justify-center transition-transform duration-75">
+                            <div class="w-2 h-12 bg-medical-500 rounded-full origin-bottom"></div>
+                        </div>
+
+                        <div class="w-full z-10 space-y-2">
+                            <button onclick="activateHardwareGoniometer()" class="w-full bg-medical-600 hover:bg-medical-500 text-white text-xs font-bold py-3 rounded-xl uppercase tracking-wider transition">Калібрувати / Дозволити датчик</button>
+                            <button onclick="freezeGoniometerAngle()" class="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2 rounded-xl transition">Зафіксувати кут (Заморозити)</button>
                         </div>
                     </div>
 
-                    <div id="scale-questions-form-container" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2"></div>
-
-                    <div class="mt-8 p-5 bg-slate-900 text-white rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <div class="text-xs text-slate-400 uppercase tracking-wide">Поточний клінічний підсумок:</div>
-                            <div id="live-interpretation" class="font-bold text-lg text-emerald-400 mt-1">0 балів</div>
+                    <div class="md:col-span-2 bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+                        <h3 class="font-bold text-lg text-slate-900 dark:text-white">Реєстрація амплітуди рухів (ROM)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Оберіть суглоб</label>
+                                <select id="gon-joint" onchange="updateFunctionalGoniometerReference()" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-sm font-bold">
+                                    <option value="knee_flex">Колінний суглоб (Згинання)</option>
+                                    <option value="hip_flex">Кульшовий суглоб (Згинання)</option>
+                                    <option value="shoulder_abd">Плечовий суглоб (Відведення)</option>
+                                    <option value="elbow_flex">Ліктьовий суглоб (Згинання)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Вписати або зафіксувати градуси</label>
+                                <input type="number" id="gon-captured-degree" value="90" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-lg font-black text-medical-600">
+                            </div>
                         </div>
-                        <button onclick="saveActiveScaleRecord()" class="tap-target w-full sm:w-auto bg-blue-600 hover:bg-blue-500 px-8 py-3 rounded-xl font-bold transition shadow-lg text-center">
-                            Зберегти запис у карту пацієнта
-                        </button>
+
+                        <div class="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                            <span class="text-xs font-bold text-slate-400 uppercase">Клінічний орієнтир норми (Довідник):</span>
+                            <div id="gon-reference-box" class="mt-2 text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed"></div>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <select id="gon-target-patient-select" class="p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold text-slate-900"></select>
+                            <button onclick="saveGoniometryToPatientCard()" class="flex-1 bg-slate-900 dark:bg-slate-700 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider">Додати вимірювання до карти</button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
-
-    <div id="print-area" class="hidden p-10 bg-white text-black max-w-2xl mx-auto border border-slate-300 rounded shadow-sm">
-        <div class="text-center border-b-4 border-blue-900 pb-4 mb-6">
-            <h1 class="text-2xl font-bold uppercase tracking-wider text-blue-900">Протокол клінічного оцінювання та обстеження</h1>
-            <p class="text-sm text-slate-600 mt-1">Автоматизована медична документація RehabAssessment PWA</p>
-        </div>
-        
-        <div class="grid grid-cols-2 gap-4 mb-6 text-sm bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <div><strong>Пацієнт (ПІБ):</strong> <span id="print-p-name" class="font-semibold text-base"></span></div>
-            <div><strong>Вік пацієнта:</strong> <span id="print-p-age" class="font-semibold"></span> р.</div>
-            <div class="col-span-2"><strong>Діагноз / Направлення:</strong> <span id="print-p-diag" class="font-semibold"></span></div>
         </div>
 
-        <div class="border-2 border-blue-900 p-6 rounded-xl bg-blue-50/50 mb-6">
-            <h2 class="font-bold text-lg text-blue-900 mb-1">Результати тестування за медичною шкалою:</h2>
-            <p class="text-base font-medium text-slate-800" id="print-scale-name">Шкала</p>
-            
-            <div class="my-4 p-4 bg-white rounded-lg border border-slate-300">
-                <p class="text-2xl font-extrabold text-blue-900" id="print-score-value">Показник: --</p>
-                <p class="mt-2 text-sm text-slate-900"><strong>Клінічний висновок та статус:</strong> <span id="print-interp" class="font-semibold text-blue-950"></span></p>
-            </div>
-            
-            <div class="text-xs text-slate-500 space-y-0.5">
-                <p>Дата та час реєстрації метрики: <span id="print-date" class="font-medium text-black"></span></p>
-                <p>Обстеження провів спеціаліст: <span id="print-doc" class="font-medium text-black"></span></p>
+
+        <div id="view-exercises" class="tab-content hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-900 dark:text-white">🏋️ Нозологічна база терапевтичних вправ</h2>
+                        <p class="text-sm text-slate-400">Каталог фізичних, дихальних та апаратних методів інтервенції.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
+                    <button onclick="filterExercisesType('all')" class="p-2 bg-slate-900 text-white rounded-lg text-xs font-bold">Усі категорії</button>
+                    <button onclick="filterExercisesType('kinesi')" class="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-white rounded-lg text-xs font-bold">Кінезотерапія</button>
+                    <button onclick="filterExercisesType('respir')" class="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-white rounded-lg text-xs font-bold">Дихальні</button>
+                    <button onclick="filterExercisesType('physio')" class="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-white rounded-lg text-xs font-bold">Фізіотерапія</button>
+                    <button onclick="filterExercisesType('hardware')" class="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-white rounded-lg text-xs font-bold">Тренажери/Інвентар</button>
+                </div>
+
+                <div id="exercises-list-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
             </div>
         </div>
 
-        <div class="mt-24 flex justify-between items-center text-sm">
-            <div class="border-t border-black w-48 text-center pt-1 text-xs">Підпис фахівця реабілітації</div>
-            <div class="border border-dashed border-slate-400 w-24 h-24 flex items-center justify-center text-xs text-slate-400 rounded">М. П. Установи</div>
+
+        <div id="view-icd10" class="tab-content hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-2">📖 Повний клінічний класифікатор МКХ-10</h2>
+                <p class="text-sm text-slate-400 mb-4">Спеціалізована вибірка кодів для фізичної та реабілітаційної медицини.</p>
+
+                <div class="space-y-3" id="icd10-directory-list"></div>
+            </div>
+        </div>
+
+
+        <div id="view-smart" class="tab-content hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-2">🎯 Інтерактивний SMART-Конструктор Цілей</h2>
+                <p class="text-sm text-slate-400 mb-6">Створюйте бездоганні клінічні формулювання цілей відповідно до міжнародних стандартів.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4 bg-slate-50 dark:bg-slate-900 p-5 rounded-2xl border">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Specific (Специфічна рухова дія)</label>
+                            <input type="text" id="smart-s" oninput="compileSmartGoalText()" value="Збільшити амплітуду активного згинання у колінному суглобі" class="w-full p-2.5 bg-white dark:bg-slate-800 border rounded-lg text-xs font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Measurable (В чому вимірюється: градуси, метри, бали)</label>
+                            <input type="text" id="smart-m" oninput="compileSmartGoalText()" value="на 25 градусів (досягаючи 110°)" class="w-full p-2.5 bg-white dark:bg-slate-800 border rounded-lg text-xs font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Achievable (Реалістичність / Засоби досягнення)</label>
+                            <input type="text" id="smart-a" oninput="compileSmartGoalText()" value="за допомогою занять активною механотерапією та PNF-технік" class="w-full p-2.5 bg-white dark:bg-slate-800 border rounded-lg text-xs font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Relevant (Клінічна доцільність / Навіщо це пацієнту)</label>
+                            <input type="text" id="smart-r" oninput="compileSmartGoalText()" value="для забезпечення самостійного підйому по сходах без опори" class="w-full p-2.5 bg-white dark:bg-slate-800 border rounded-lg text-xs font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Time-bound (Часові рамки / Термін досягнення)</label>
+                            <input type="text" id="smart-t" oninput="compileSmartGoalText()" value="до закінчення поточного курсу терапії (через 14 днів)." class="w-full p-2.5 bg-white dark:bg-slate-800 border rounded-lg text-xs font-medium">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 text-white p-6 rounded-2xl flex flex-col justify-between border border-slate-800 shadow-xl">
+                        <div>
+                            <span class="text-xs font-bold tracking-widest uppercase text-slate-400">Скомпоноване медичне формулювання цілі:</span>
+                            <div id="smart-output-text" class="text-sm font-medium leading-relaxed text-emerald-300 mt-4 italic bg-slate-950 p-4 rounded-xl border border-slate-800"></div>
+                        </div>
+                        
+                        <div class="space-y-2 mt-6">
+                            <label class="block text-xs font-bold text-slate-400 uppercase">Прив'язати ціль до пацієнта:</label>
+                            <div class="flex gap-2">
+                                <select id="smart-target-patient-select" class="p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white font-bold"></select>
+                                <button onclick="bindSmartGoalToPatientCard()" class="flex-1 bg-medical-600 hover:bg-medical-500 text-white text-xs font-bold py-2.5 rounded-lg uppercase tracking-wide">Внести в карту</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="view-settings" class="tab-content hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-4">⚙️ Налаштування платформи Re_Hab</h2>
+                
+                <div class="max-w-md space-y-4">
+                    <div class="p-4 border rounded-xl flex justify-between items-center">
+                        <div>
+                            <span class="block font-bold text-sm">Мова інтерфейсу / Language</span>
+                            <span class="text-xs text-slate-400">Локалізація медичних протоколів</span>
+                        </div>
+                        <select class="p-2 border rounded-lg text-xs font-bold bg-slate-50 dark:bg-slate-900"><option>Українська (UA)</option><option>English (EN)</option></select>
+                    </div>
+
+                    <div class="p-4 border rounded-xl flex justify-between items-center">
+                        <div>
+                            <span class="block font-bold text-sm">Адміністративна панель контенту</span>
+                            <span class="text-xs text-slate-400">Редагування реєстру шкал та вправ</span>
+                        </div>
+                        <button class="bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-lg">Завантажити JSON</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="moh-print-template" class="hidden p-12 bg-white text-black max-w-3xl mx-auto border font-serif">
+        <div class="text-center border-b-4 border-slate-900 pb-4 mb-6">
+            <h1 class="text-xl font-bold uppercase tracking-wide">Міністерство Охорони Здоров'я України</h1>
+            <h2 class="text-base font-bold uppercase text-slate-700 mt-1">Виписка з індивідуальної карти реабілітації пацієнта</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Створено автоматизованою медичною системою Re_Hab Pro</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 text-xs border p-4 bg-slate-50 rounded-lg mb-6">
+            <div><strong>Пацієнт (ПІБ):</strong> <span id="prnt-name-ua" class="font-bold underline text-sm"></span></div>
+            <div><strong>Patient Name (EN):</strong> <span id="prnt-name-en" class="italic"></span></div>
+            <div><strong>Вік:</strong> <span id="prnt-age" class="font-bold"></span> р.</div>
+            <div><strong>Клінічний діагноз (МКХ-10):</strong> <span id="prnt-icd" class="font-bold"></span></div>
+        </div>
+
+        <div class="space-y-4 text-xs">
+            <div class="p-3 border rounded-lg">
+                <h3 class="font-bold uppercase border-b pb-1 mb-2">1. Затверджені цілі реабілітації (SMART):</h3>
+                <p id="prnt-goals" class="italic text-slate-800"></p>
+            </div>
+
+            <div class="p-3 border rounded-lg">
+                <h3 class="font-bold uppercase border-b pb-1 mb-2">2. Динаміка клінічних шкал та функціонального стану:</h3>
+                <table class="w-full text-left">
+                    <thead><tr class="border-b"><th>Дата сесії</th><th>Назва шкали / Тесту</th><th>Зафіксований результат</th></tr></thead>
+                    <tbody id="prnt-scales-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="p-3 border rounded-lg">
+                <h3 class="font-bold uppercase border-b pb-1 mb-2">3. Індивідуальний реабілітаційний план вправ:</h3>
+                <div id="prnt-plan" class="space-y-1"></div>
+            </div>
+        </div>
+
+        <div class="mt-20 flex justify-between items-center text-xs">
+            <div class="border-t border-black w-48 text-center pt-1">Фізичний терапевт: Мамедов А. Ф.</div>
+            <div class="border border-dashed border-slate-400 w-20 h-20 flex items-center justify-center text-[10px] text-slate-400 rounded">М. П.</div>
         </div>
     </div>
 
 
     <script>
-        // --- 📊 РОЗШИРЕНА ІНТЕРАКТИВНА БАЗА ДАНИХ КЛІНІЧНИХ ШКАЛ ---
-        const scalesCatalog = {
-            rehab: {
-                name: "Фізична терапія / Реабілітація",
-                adults: [
-                    { id: "barthel", name: "Індекс Бартел (Barthel Index)", desc: "Повноцінна оцінка повсякденної життєдіяльності та побутової незалежності (0-100 балів)", type: "interactive" },
-                    { id: "ashworth", name: "Модифікована шкала Ешворта (Ashworth)", desc: "Клінічна оцінка спастичності та м'язового тонусу (бали 0 - 4)", type: "interactive" },
-                    { id: "berg", name: "Шкала балансу Берга (Berg Balance Scale)", desc: "Повний інтерактивний тест оцінки статичної та динамічної рівноваги (14 пунктів, 0-56 балів)", type: "interactive" },
-                    { id: "dgi", name: "Динамічний індекс ходьби (Dynamic Gait Index)", desc: "Оцінка здатності пацієнта адаптувати ходьбу до зовнішніх умов та перешкод (8 пунктів, 0-24 бали)", type: "interactive" },
-                    { id: "rivermead", name: "Індекс мобільності Рівермід (Rivermead)", desc: "Перевірка рухової активності від поворотів у ліжку до бігу (15 питань, Так/Ні, 0-15 балів)", type: "interactive" },
-                    { id: "tug", name: "Тест «Встань та йди» (Timed Up & Go)", desc: "Хронометрований експрес-тест оцінки динамічного балансу та ризику падінь (в секундах)", type: "interactive" }
-                ],
-                children: [
-                    { id: "gmfcs", name: "Система класифікації великих моторних функцій (GMFCS)", desc: "Оцінка рухових порушень у дітей з ДЦП за рівнями (I - V)", type: "interactive" },
-                    { id: "pebs", name: "Педіатрична шкала балансу (Pediatric Balance Scale)", desc: "Модифікована шкала рівноваги для дітей (14 пунктів, 0-56 балів)", type: "interactive" }
-                ]
-            },
-            neuro: {
-                name: "Неврологія й когніція",
-                adults: [
-                    { id: "rass", name: "Шкала седації-ажитації Ричмонда (RASS)", desc: "Оцінка ступеня психомоторного збудження або глибини седації (від -5 до +4)", type: "interactive" },
-                    { id: "moca", name: "Монреальська шкала когнітивної оцінки (MoCA)", desc: "Повний структурований скринінг когнітивного дефіциту за доменами (0-30 балів)", type: "interactive" },
-                    { id: "nihss", name: "Шкала інсульту Національних інститутів здоров'я (NIHSS)", desc: "Клінічна оцінка тяжкості неврологічного дефіциту при інсульті (0-42 бали)", type: "interactive" }
-                ],
-                children: [
-                    { id: "pgcs", name: "Педіатрична шкала коми Глазго (pGCS)", desc: "Оцінка рівня свідомості у дітей раннього віку за трьома доменами (3-15 балів)", type: "interactive" }
-                ]
-            }
+        // --- ПОДРОБНИЙ ДОВІДНИК МКХ-10 ---
+        const icd10Directory = [
+            { code: "I63", name: "Церебральний інфаркт (Ішемічний інсульт)", group: "Неврологія" },
+            { code: "G80", name: "Дитячий церебральний параліч (ДЦП)", group: "Педіатрія" },
+            { code: "M17", name: "Гонартроз (Артроз колінного суглоба)", group: "Ортопедія" },
+            { code: "T90", name: "Наслідки черепно-мозкової травми", group: "Неврологія" },
+            { code: "M50", name: "Ураження міжхребцевих дисків шийного відділу", group: "Ортопедія" }
+        ];
+
+        // --- БАЗА ШКАЛ ЗА ВАШИМ ТЗ ---
+        const clinicalScalesRegistry = {
+            pediatric: [
+                { id: "gmfcs", cat: "Неврологія й ДЦП", name: "GMFCS / GMFM-66", desc: "Класифікація великих моторних функцій у дітей з ДЦП (Рівні I - V).", type: "custom" },
+                { id: "macs", cat: "Неврологія й ДЦП", name: "MACS / Mini-MACS", desc: "Класифікація маніпулятивних можливостей рук дитини.", type: "custom" },
+                { id: "aims", cat: "Неврологія й ДЦП", name: "AIMS (Alberta Infant Motor Scale)", desc: "Оцінка моторного розвитку немовлят у 4 положеннях.", type: "custom" },
+                { id: "fms", cat: "Неврологія й ДЦП", name: "FMS (Functional Mobility Scale)", desc: "Оцінка ходьби на 3 дистанції (5, 50, 500 м) з допоміжними засобами.", type: "custom" }
+            ],
+            adult: [
+                { id: "nihss", cat: "Неврологія та Інсульт", name: "NIHSS Stroke Scale", desc: "Шкала Національних інститутів здоров'я США для оцінки тяжкості інсульту (0-42 бали).", type: "interactive" },
+                { id: "barthel", cat: "Загальний функціональний статус", name: "Індекс Бартел (Barthel Index)", desc: "Базова повсякденна життєдіяльність та незалежність (0-100 балів).", type: "interactive" },
+                { id: "moca", cat: "Неврологія та Інсульт", name: "MoCA (Монреальська шкала когніцій)", desc: "Глибокий скринінг когнітивного дефіциту за доменами (0-30 балів).", type: "interactive" }
+            ]
         };
 
-        // Стан додатку
-        let appState = {
-            currentDoctor: null,
-            patients: JSON.parse(localStorage.getItem('rehab_patients_v3')) || [],
+        // --- БАЗА ВПРАВ ---
+        const exercisesRegistry = [
+            { id: "ex1", type: "kinesi", diagnosis: "I63", name: "Пропріоцептивна нейром'язова фасилітація (PNF)", desc: "Діагональні патерни для відновлення рухового контролю парезованої кінцівки.", dosage: "10 повторів, 3 серії" },
+            { id: "ex2", type: "respir", diagnosis: "I63", name: "Діафрагмальне дихання під контролем", desc: "Зниження тонусу допоміжних м'язів шиї, покращення вентиляції.", dosage: "5 хвилин" },
+            { id: "ex3", type: "physio", diagnosis: "I63", name: "Функціональна електростимуляція (ФЕС)", desc: "Електроімпульсна терапія розгиначів кисті/стопи для пригнічення спастичності.", dosage: "15 хвилин" },
+            { id: "ex4", type: "kinesi", diagnosis: "M17", name: "Ізометричне зміцнення чотириголового м'яза стегна", desc: "Статична активація квадрицепса без осьового навантаження на колінний суглоб.", dosage: "15 повторів, 4 серії" },
+            { id: "ex5", type: "hardware", diagnosis: "M17", name: "Заняття на пасивному велотренажері (CPM)", desc: "Механотерапія для відновлення амплітуди згинання суглоба.", dosage: "20 хвилин" }
+        ];
+
+        // --- ГЛОБАЛЬНИЙ СТАН ДОДАТКУ ---
+        let state = {
+            patients: JSON.parse(localStorage.getItem('re_hab_patients')) || [],
             activePatientId: null,
-            selectedProfile: 'rehab',
-            selectedAge: 'adults',
-            activeScaleId: null,
-            activeScaleObject: null
+            currentScaleId: null,
+            activeTab: 'patients',
+            scalesFilter: 'pediatric',
+            exercisesFilter: 'all'
         };
 
         window.onload = function() {
-            const savedDoc = localStorage.getItem('rehab_current_doc_v3');
-            if (savedDoc) { loginAs(savedDoc); }
+            renderPatientsGrid();
+            renderIcd10Directory();
+            compileSmartGoalText();
+            updatePatientSelects();
+            updateFunctionalGoniometerReference();
         };
 
-        function loginAs(doctorName) {
-            appState.currentDoctor = doctorName;
-            localStorage.setItem('rehab_current_doc_v3', doctorName);
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('main-interface').classList.remove('hidden');
-            document.getElementById('user-display').innerText = `ЛІКАР: ${doctorName}`;
-            showDashboard();
+        // НАВІГАЦІЯ МІЖ ВКЛАДКАМИ
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`subview-single-patient`).classList.add('hidden');
+            document.getElementById(`subview-scale-execution`).classList.add('hidden');
+            document.getElementById(`back-navigation-container`).classList.add('hidden');
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            
+            // Оновлення кнопок меню
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.className = "px-4 py-2.5 rounded-xl font-bold text-sm transition shrink-0 text-slate-600 dark:text-slate-400 hover:bg-white/50";
+            });
+            document.getElementById(`tab-btn-${tabId}`).className = "px-4 py-2.5 rounded-xl font-bold text-sm transition shrink-0 bg-white dark:bg-slate-800 text-medical-600 shadow-sm border border-slate-200 dark:border-slate-700";
+
+            if (tabId === 'scales') renderScalesCatalog();
+            if (tabId === 'exercises') renderExercisesCatalog();
+            updatePatientSelects();
         }
 
-        function logout() {
-            localStorage.removeItem('rehab_current_doc_v3');
-            appState.currentDoctor = null;
-            document.getElementById('main-interface').classList.add('hidden');
-            document.getElementById('auth-screen').classList.remove('hidden');
+        function triggerGlobalBack() {
+            if (state.activeTab === 'patients') {
+                switchTab('patients');
+            } else if (state.activeTab === 'scales') {
+                switchTab('scales');
+            }
         }
 
-        function showDashboard() {
-            document.getElementById('patient-view').classList.add('hidden');
-            document.getElementById('catalog-view').classList.add('hidden');
-            document.getElementById('test-view').classList.add('hidden');
-            document.getElementById('dashboard-view').classList.remove('hidden');
-            renderPatientsList();
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
         }
 
-        function renderPatientsList() {
-            const container = document.getElementById('patients-list');
+        // --- СИСТЕМА ПАЦІЄНТІВ ---
+        function registerPatient(e) {
+            e.preventDefault();
+            const newPatient = {
+                id: "pat_" + Date.now(),
+                nameUa: document.getElementById('reg-name-ua').value.trim(),
+                nameEn: document.getElementById('reg-name-en').value.trim(),
+                age: document.getElementById('reg-age').value,
+                icd10: document.getElementById('reg-icd10').value,
+                comorbidities: document.getElementById('reg-comorbidities').value.trim(),
+                smartGoals: "Цілі реабілітації ще не встановлені.",
+                visits: [],
+                scalesLog: [],
+                planDays: 14
+            };
+            state.patients.push(newPatient);
+            saveToLocalStorage();
+            document.getElementById('patient-registration-form').reset();
+            renderPatientsGrid();
+            updatePatientSelects();
+        }
+
+        function renderPatientsGrid() {
+            const container = document.getElementById('patients-cards-grid');
             container.innerHTML = '';
-            if (appState.patients.length === 0) {
-                container.innerHTML = `<p class="text-slate-400 text-sm italic col-span-2 py-6 text-center bg-white rounded-xl border border-dashed">У базі немає зареєстрованих карт пацієнтів.</p>`;
+            if (state.patients.length === 0) {
+                container.innerHTML = `<p class="text-xs italic text-slate-400 py-6 text-center col-span-2">Жодної електронної карти ще не зареєстровано у базі.</p>`;
                 return;
             }
-            appState.patients.forEach(p => {
-                const lastTest = p.history && p.history.length > 0 ? p.history[p.history.length - 1] : null;
-                const testText = lastTest ? `Останній тест: ${lastTest.scaleName} (${lastTest.score})` : 'Обстежень ще не проводилось';
-                const card = document.createElement('div');
-                card.className = "bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-400 cursor-pointer transition flex flex-col justify-between";
-                card.onclick = () => viewPatientCard(p.id);
-                card.innerHTML = `
+            state.patients.forEach(p => {
+                const diagName = icd10Directory.find(i => i.code === p.icd10)?.name || p.icd10;
+                const div = document.createElement('div');
+                div.className = "bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:border-medical-500 cursor-pointer transition flex flex-col justify-between";
+                div.onclick = () => openPatientCard(p.id);
+                div.innerHTML = `
                     <div>
-                        <h3 class="font-bold text-slate-900 text-base">${p.name}</h3>
-                        <p class="text-xs text-slate-500 mt-1">Вік: ${p.age} р. | Діагноз: ${p.diagnosis}</p>
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-black text-slate-900 dark:text-white text-base">${p.nameUa}</h4>
+                            <span class="text-[10px] bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded font-mono font-bold text-slate-500">${p.icd10}</span>
+                        </div>
+                        <p class="text-xs text-slate-400 italic mt-0.5">${p.nameEn}</p>
+                        <p class="text-xs mt-2 text-slate-600 dark:text-slate-300"><b>Діагноз:</b> ${diagName}</p>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-medium ${lastTest ? 'text-emerald-600' : 'text-slate-400'}">
-                        <span class="truncate max-w-[200px]">${testText}</span>
-                        <span class="text-blue-500 font-semibold shrink-0">Переглянути карту →</span>
+                    <div class="mt-4 pt-3 border-t text-[11px] font-bold text-medical-600 flex justify-between items-center">
+                        <span>Зафіксовано сесій: ${p.visits.length}</span>
+                        <span>Відкрити карту МОЗ →</span>
                     </div>
                 `;
-                container.appendChild(card);
+                container.appendChild(div);
             });
         }
 
-        function createNewPatient(e) {
-            e.preventDefault();
-            const newPatient = {
-                id: Date.now().toString(),
-                name: document.getElementById('p-name').value.trim(),
-                age: document.getElementById('p-age').value,
-                diagnosis: document.getElementById('p-diag').value.trim(),
-                history: []
-            };
-            appState.patients.push(newPatient);
-            localStorage.setItem('rehab_patients_v3', JSON.stringify(appState.patients));
-            document.getElementById('add-patient-form').reset();
-            renderPatientsList();
-        }
-
-        function viewPatientCard(patientId) {
-            appState.activePatientId = patientId;
-            const p = appState.patients.find(pt => pt.id === patientId);
-            document.getElementById('current-p-name').innerText = p.name;
-            document.getElementById('current-p-age').innerText = p.age;
-            document.getElementById('current-p-diag').innerText = p.diagnosis;
+        function openPatientCard(id) {
+            state.activePatientId = id;
+            const p = state.patients.find(pt => pt.id === id);
             
-            document.getElementById('dashboard-view').classList.add('hidden');
-            document.getElementById('catalog-view').classList.add('hidden');
-            document.getElementById('test-view').classList.add('hidden');
-            document.getElementById('patient-view').classList.remove('hidden');
-            renderHistoryTable(p);
+            document.getElementById('view-patients').classList.add('hidden');
+            document.getElementById('subview-single-patient').classList.remove('hidden');
+            document.getElementById('back-navigation-container').classList.remove('hidden');
+
+            document.getElementById('p-card-title-ua').innerText = p.nameUa;
+            document.getElementById('p-card-title-en').innerText = p.nameEn;
+            document.getElementById('p-card-age').innerText = p.age;
+            document.getElementById('p-card-icd').innerText = icd10Directory.find(i => i.code === p.icd10)?.name || p.icd10;
+            document.getElementById('p-card-smart-goals').innerText = p.smartGoals;
+            document.getElementById('p-card-plan-days').value = p.planDays;
+
+            renderPatientVisitsTable(p);
+            renderPatientScalesLog(p);
+            generateCyclicRehabPlan(p);
         }
 
-        function renderHistoryTable(patient) {
-            const tbody = document.getElementById('history-table-body');
+        function logPatientVisit(e) {
+            e.preventDefault();
+            const p = state.patients.find(pt => pt.id === state.activePatientId);
+            const now = new Date();
+            const visit = {
+                num: p.visits.length + 1,
+                date: now.toLocaleDateString('uk-UA') + ' ' + now.toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'}),
+                hr: document.getElementById('visit-hr').value,
+                bp: document.getElementById('visit-bp').value,
+                spo2: document.getElementById('visit-spo2').value
+            };
+            p.visits.push(visit);
+            saveToLocalStorage();
+            renderPatientVisitsTable(p);
+        }
+
+        function renderPatientVisitsTable(p) {
+            const tbody = document.getElementById('p-card-visits-history');
             tbody.innerHTML = '';
-            if (!patient.history || patient.history.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 italic bg-white">Історія обстежень порожня.</td></tr>`;
+            if (p.visits.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-xs italic text-slate-400 bg-white dark:bg-slate-800">Жодної сесії моніторингу ще не зафіксовано.</td></tr>`;
                 return;
             }
-            [...patient.history].reverse().forEach((record) => {
+            [...p.visits].reverse().forEach(v => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
                 tr.innerHTML = `
-                    <td class="py-3 px-2 font-medium text-xs">${record.date}</td>
-                    <td class="py-3 px-2 text-slate-900 font-semibold text-xs">${record.scaleName}</td>
-                    <td class="py-3 px-2 font-extrabold text-blue-600 text-center text-sm">${record.score}</td>
-                    <td class="py-3 px-2 text-xs text-slate-600 max-w-[250px] truncate" title="${record.interpretation}">${record.interpretation}</td>
-                    <td class="py-3 px-2 text-center">
-                        <div class="inline-flex rounded-md shadow-sm gap-1">
-                            <button onclick="exportToPDF('${patient.id}', '${record.id}', true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-xs font-bold transition">Надіслати PDF</button>
-                            <button onclick="triggerSystemPrint('${patient.id}', '${record.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-1 rounded text-xs transition">Друк</button>
-                        </div>
-                    </td>
+                    <td class="p-2 font-bold">${v.num}</td>
+                    <td class="p-2 text-slate-500">${v.date}</td>
+                    <td class="p-2 text-center font-bold text-rose-600">${v.hr} bpm</td>
+                    <td class="p-2 text-center font-bold text-blue-600">${v.bp}</td>
+                    <td class="p-2 text-center font-bold text-emerald-600">${v.spo2}%</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function openCatalogSelection() {
-            document.getElementById('patient-view').classList.add('hidden');
-            document.getElementById('catalog-view').classList.remove('hidden');
-            renderScalesGrid();
-        }
-
-        function backToPatientCard() {
-            document.getElementById('catalog-view').classList.add('hidden');
-            document.getElementById('patient-view').classList.remove('hidden');
-        }
-
-        function setProfile(profileKey) {
-            appState.selectedProfile = profileKey;
-            ['rehab', 'neuro'].forEach(key => {
-                const btn = document.getElementById(`prof-btn-${key}`);
-                if (key === profileKey) {
-                    btn.className = "tap-target p-4 rounded-xl font-bold border-2 text-left transition flex items-center justify-between bg-blue-600 text-white border-blue-600";
-                } else {
-                    btn.className = "tap-target p-4 rounded-xl font-bold border-2 text-left transition flex items-center justify-between bg-white text-slate-700 border-slate-200 hover:bg-slate-50";
-                }
+        function renderPatientScalesLog(p) {
+            const tbody = document.getElementById('p-card-scales-log');
+            tbody.innerHTML = '';
+            if (!p.scalesLog || p.scalesLog.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-slate-400 italic py-2">Метрики відсутні</td></tr>`;
+                return;
+            }
+            p.scalesLog.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 dark:border-slate-700";
+                tr.innerHTML = `<td class="py-1.5">${s.date}</td><td class="font-bold">${s.name}</td><td class="text-center font-extrabold text-medical-600">${s.score}</td>`;
+                tbody.appendChild(tr);
             });
-            renderScalesGrid();
         }
 
-        function setAgeCategory(ageKey) {
-            appState.selectedAge = ageKey;
-            ['adults', 'children'].forEach(key => {
-                const btn = document.getElementById(`age-btn-${key}`);
-                if (key === ageKey) {
-                    btn.className = "flex-1 py-2 text-center font-bold text-sm rounded-lg transition bg-white shadow text-blue-600";
-                } else {
-                    btn.className = "flex-1 py-2 text-center font-bold text-sm rounded-lg transition text-slate-600 hover:text-slate-900";
-                }
-            });
-            renderScalesGrid();
-        }
-
-        function renderScalesGrid() {
-            const container = document.getElementById('scales-grid-container');
-            container.innerHTML = '';
-            const scalesList = scalesCatalog[appState.selectedProfile][appState.selectedAge] || [];
+        // --- АВТОГЕНЕРАЦІЯ РЕАБІЛІТАЦІЙНОГО ПЛАНУ З ЧЕРГУВАННЯМ ---
+        function generateCyclicRehabPlan(p) {
+            const planContainer = document.getElementById('p-card-rehab-plan');
+            planContainer.innerHTML = '';
             
-            if (scalesList.length === 0) {
-                container.innerHTML = `<p class="text-slate-400 text-sm italic col-span-2 py-4">Немає розроблених шкал для цієї категорії.</p>`;
+            // Фільтруємо вправи під діагноз пацієнта
+            const matchingExercises = exercisesRegistry.filter(ex => ex.diagnosis === p.icd10);
+            if (matchingExercises.length === 0) {
+                planContainer.innerHTML = `<p class="italic text-slate-400">Немає вправ у реєстрі для даної нозології.</p>`;
                 return;
             }
 
-            scalesList.forEach(scale => {
-                const box = document.createElement('button');
-                box.className = "p-4 bg-slate-50 hover:bg-blue-50/50 border border-slate-200 hover:border-blue-300 rounded-xl transition text-left flex flex-col justify-between group";
-                box.onclick = () => startScaleTest(scale.id);
-                box.innerHTML = `
-                    <div>
-                        <h4 class="font-bold text-slate-900 group-hover:text-blue-700 transition text-sm">${scale.name}</h4>
-                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">${scale.desc}</p>
-                    </div>
-                    <span class="text-xs text-blue-600 font-semibold mt-3 inline-block">Запустити опитувальник →</span>
-                `;
-                container.appendChild(box);
+            for (let day = 1; day <= p.planDays; day++) {
+                // Чергування вправ залежно від дня
+                const exerciseIndex = (day - 1) % matchingExercises.length;
+                const currentEx = matchingExercises[exerciseIndex];
+                
+                const item = document.createElement('div');
+                item.className = "p-2 bg-slate-50 dark:bg-slate-900 border rounded-lg mb-1";
+                item.innerHTML = `<strong>День ${day}:</strong> <span class="text-medical-600 dark:text-medical-400 font-bold">${currentEx.name}</span> — ${currentEx.dosage}. <span class="text-slate-400 block text-[10px]">${currentEx.desc}</span>`;
+                planContainer.appendChild(item);
+            }
+        }
+
+        function rebuildRehabPlanDays() {
+            const p = state.patients.find(pt => pt.id === state.activePatientId);
+            p.planDays = parseInt(document.getElementById('p-card-plan-days').value) || 14;
+            saveToLocalStorage();
+            generateCyclicRehabPlan(p);
+        }
+
+        // --- СИСТЕМА КЛІНІЧНИХ ШКАЛ ---
+        function filterScalesCategory(cat) {
+            state.scalesFilter = cat;
+            ['pediatric', 'adult'].forEach(c => {
+                const btn = document.getElementById(`scale-filter-${c}`);
+                if (c === cat) {
+                    btn.className = "flex-1 py-2 rounded-lg text-xs font-bold text-center bg-white dark:bg-slate-800 shadow-sm text-medical-600";
+                } else {
+                    btn.className = "flex-1 py-2 rounded-lg text-xs font-bold text-center text-slate-500 hover:text-slate-800";
+                }
             });
+            renderScalesCatalog();
         }
 
-        function startScaleTest(scaleId) {
-            appState.activeScaleId = scaleId;
-            const scaleObj = scalesCatalog[appState.selectedProfile][appState.selectedAge].find(s => s.id === scaleId);
-            appState.activeScaleObject = scaleObj;
+        function renderScalesCatalog() {
+            const container = document.getElementById('scales-categories-container');
+            container.innerHTML = '';
+            const list = clinicalScalesRegistry[state.scalesFilter];
 
-            document.getElementById('active-scale-title').innerText = scaleObj.name;
-            document.getElementById('active-scale-desc').innerText = scaleObj.desc;
+            // Групування за підкатегоріями
+            const groups = {};
+            list.forEach(s => {
+                if (!groups[s.cat]) groups[s.cat] = [];
+                groups[s.cat].push(s);
+            });
 
-            buildFormInterface(scaleId);
-
-            document.getElementById('catalog-view').classList.add('hidden');
-            document.getElementById('test-view').classList.remove('hidden');
+            for (const [catName, items] of Object.entries(groups)) {
+                const catBlock = document.createElement('div');
+                catBlock.innerHTML = `<h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 border-b pb-1">${catName}</h3>`;
+                const grid = document.createElement('div');
+                grid.className = "grid grid-cols-1 md:grid-cols-2 gap-4 mb-6";
+                
+                items.forEach(scale => {
+                    const box = document.createElement('div');
+                    box.className = "p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col justify-between items-start";
+                    box.innerHTML = `
+                        <div>
+                            <h4 class="font-bold text-slate-900 dark:text-white text-sm">${scale.name}</h4>
+                            <p class="text-xs text-slate-400 mt-1">${scale.desc}</p>
+                        </div>
+                        <button onclick="launchScaleExecution('${scale.id}')" class="mt-4 text-xs font-bold text-medical-600 hover:underline">
+                            ${scale.type === 'interactive' ? '▶️ Запустити інтерактивне тестування' : '📖 Відкрити клінічну інструкцію'}
+                        </button>
+                    `;
+                    grid.appendChild(box);
+                });
+                catBlock.appendChild(grid);
+                container.appendChild(catBlock);
+            }
         }
 
-        function cancelTest() {
-            document.getElementById('test-view').classList.add('hidden');
-            document.getElementById('catalog-view').classList.remove('hidden');
+        function launchScaleExecution(scaleId) {
+            state.currentScaleId = scaleId;
+            let list = [...clinicalScalesRegistry.pediatric, ...clinicalScalesRegistry.adult];
+            const scale = list.find(s => s.id === scaleId);
+
+            document.getElementById('view-scales').classMinus = 'hidden'; 
+            document.getElementById('view-scales').classList.add('hidden');
+            document.getElementById('subview-scale-execution').classList.remove('hidden');
+            document.getElementById('back-navigation-container').classList.remove('hidden');
+
+            document.getElementById('exec-scale-title').innerText = scale.name;
+            document.getElementById('exec-scale-desc').innerText = scale.desc;
+
+            buildInteractiveForm(scaleId);
         }
 
-        // --- ДВИГУН ГЕНЕРАЦІЇ ПОВНОЦІННИХ ІНТЕРАКТИВНИХ БЛАНКІВ ---
-        function buildFormInterface(id) {
-            const container = document.getElementById('scale-questions-form-container');
+        function buildInteractiveForm(id) {
+            const container = document.getElementById('exec-scale-questions-container');
             container.innerHTML = '';
             let html = '';
 
-            // 1. ШКАЛА БЕРГА (14 інтерактивних пунктів по 0-4 бали)
-            if (id === "berg" || id === "pebs") {
-                const bergItems = [
-                    "Вставання зі стільця", "Стояння без підтримки", "Сідання на стілець з підтримкою спини", "Сідання з положення стоячи",
-                    "Пересаджування з крісла в крісло", "Стояння із заплющеними очима (10 сек)", "Стояння з ногами разом", "Тягнення вперед витягнутою рукою",
-                    "Підняття предмета з підлоги", "Поворот корпусу назад / озирання", "Поворот на 360 градусів", "Почергове ставіння ніг на сходинку",
-                    "Стояння: одна нога тандемно попереду іншої", "Стояння на одній нозі"
-                ];
-                bergItems.forEach((item, idx) => {
+            if (id === 'nihss') {
+                const items = ["1a. Рівень свідомості", "1b. Відповіді на запитання", "2. Рухи очей (погляд)", "3. Зорові поля", "4. Парез лицьового нерва"];
+                items.forEach((item, i) => {
                     html += `
-                        <div class="p-4 bg-white border rounded-xl space-y-2 mb-3 shadow-sm">
-                            <span class="block font-bold text-sm text-blue-900">${idx + 1}. ${item}</span>
-                            <div class="grid grid-cols-5 gap-1" onchange="calculateDynamicScore()">
-                                ${[0,1,2,3,4].map(b => `
-                                    <label class="flex flex-col items-center justify-center p-2 border rounded-lg text-center cursor-pointer hover:bg-blue-50 text-xs">
-                                        <input type="radio" name="berg-q-${idx}" value="${b}" ${b===4?'checked':''} class="mb-1"> ${b} б.
-                                    </label>
-                                `).join('')}
-                            </div>
-                        </div>`;
-                });
-            }
-            // 2. ІНДЕКС РІВЕРМІД (15 питань Так/Ні)
-            else if (id === "rivermead") {
-                const rivItems = [
-                    "Поворот у ліжку: чи може самостійно повернутися на бік?", "Перехід у сидіння: чи може самостійно сісти з положення лежачи?",
-                    "Утримання рівноваги сидячи: чи тримає баланс на краю ліжка 10 сек?", "Перехід у стояння: чи встає з будь-якого стільця без допомоги?",
-                    "Стояння без підтримки: чи може простояти без опори 10 секунд?", "Пересаджування: чи пересідає з ліжка на стілець без допомоги?",
-                    "Ходьба по кімнаті: чи ходить самостійно на відстань 10 метрів?", "Ходьба по дому: чи може ходити по квартирі, включаючи повороти?",
-                    "Ходьба на вулиці: чи ходить самостійно по рівній поверхні надворі?", "Підйом по сходах: чи може піднятися на один сходовий проліт?",
-                    "Ходьба по нерівній поверхні: трава, гравій, схил?", "Підняття предмета з підлоги: нахилитися та підняти річ?",
-                    "Пересування у ванній: залізти та вилізти з ванної/душу?", "Ходьба 200 метрів: чи пройде цю відстань без зупинки?",
-                    "Біг: чи може пробігти 10 метрів підтюпцем за 4 секунди?"
-                ];
-                rivItems.forEach((item, idx) => {
-                    html += `
-                        <div class="p-3 bg-white border rounded-xl flex justify-between items-center shadow-sm" onchange="calculateDynamicScore()">
-                            <span class="text-xs font-medium pr-4">${idx+1}. ${item}</span>
-                            <div class="flex space-x-2 shrink-0">
-                                <label class="px-3 py-1 border rounded-lg cursor-pointer text-xs font-bold bg-slate-50"><input type="radio" name="riv-q-${idx}" value="1" checked> ТАК</label>
-                                <label class="px-3 py-1 border rounded-lg cursor-pointer text-xs font-bold bg-slate-50"><input type="radio" name="riv-q-${idx}" value="0"> НІ</label>
-                            </div>
-                        </div>`;
-                });
-            }
-            // 3. ДИНАМІЧНИЙ ІНДЕКС ХОДЬБИ DGI (8 пунктів по 0-3 бали)
-            else if (id === "dgi") {
-                const dgiItems = [
-                    "Ходьба по рівній поверхні (6 метрів)", "Зміна швидкості ходьби (нормальна, швидка, повільна)",
-                    "Ходьба з поворотами голови в горизонтальній площині", "Ходьба з поворотами голови у вертикальній площині (вгору/вниз)",
-                    "Ходьба з швидким поворотом навколо своєї осі на 180 градусів", "Ходьба з переступанням через перешкоду (коробку)",
-                    "Ходьба з обходженням навколо перешкод (конуси)", "Підйом та спуск по сходах"
-                ];
-                dgiItems.forEach((item, idx) => {
-                    html += `
-                        <div class="p-4 bg-white border rounded-xl space-y-2 mb-3 shadow-sm">
-                            <span class="block font-bold text-sm text-blue-900">${idx+1}. ${item}</span>
-                            <div class="grid grid-cols-4 gap-1" onchange="calculateDynamicScore()">
-                                ${[3,2,1,0].map(b => `
-                                    <label class="flex flex-col items-center justify-center p-2 border rounded-lg text-center cursor-pointer hover:bg-blue-50 text-xs">
-                                        <input type="radio" name="dgi-q-${idx}" value="${b}" ${b===3?'checked':''} class="mb-1"> ${b===3?'Норма':b===2?'Легка':b===1?'Помірна':'Тяжка'} (${b}б.)
-                                    </label>
-                                `).join('')}
-                            </div>
-                        </div>`;
-                });
-            }
-            // 4. ТЕСТ TUG (Введення часу)
-            else if (id === "tug") {
-                html = `
-                    <div class="p-5 bg-white border rounded-xl space-y-3 shadow-sm">
-                        <label class="block text-sm font-bold text-slate-700">Точний час виконання тесту (в секундах):</label>
-                        <div class="flex items-center space-x-2">
-                            <input type="number" id="tug-seconds-input" min="1" max="100" value="12" step="0.1" oninput="calculateDynamicScore()" class="p-3 border rounded-xl outline-none text-xl font-bold w-32 border-blue-500 ring-2 ring-blue-100">
-                            <span class="text-lg font-bold text-slate-600">сек.</span>
-                        </div>
-                    </div>`;
-            }
-            // 5. ІНДЕКС БАРТЕЛ
-            else if (id === "barthel") {
-                const bItems = [
-                    { n: "Прийом їжі", o: [{b:10,t:"Самостійно"},{b:5,t:"Допомога"},{b:0,t:"Залежний"}] },
-                    { n: "Ванна / Душ", o: [{b:5,t:"Самостійно"},{b:0,t:"Залежний"}] },
-                    { n: "Гігієна обличчя/рук", o: [{b:5,t:"Самостійно"},{b:0,t:"Залежний"}] },
-                    { n: "Одягання", o: [{b:10,t:"Самостійно"},{b:5,t:"Половина дій"},{b:0,t:"Залежний"}] },
-                    { n: "Контроль кишечника", o: [{b:10,t:"Контролює"},{b:5,t:"Рідкісні казуси"},{b:0,t:"Не тримає"}] },
-                    { n: "Контроль сечового міхура", o: [{b:10,t:"Контролює"},{b:5,t:"Казуси <1 на добу"},{b:0,t:"Не тримає"}] },
-                    { n: "Користування туалетом", o: [{b:10,t:"Самостійно"},{b:5,t:"Часткова допомога"},{b:0,t:"Залежний"}] },
-                    { n: "Переміщення з ліжка в крісло", o: [{b:15,t:"Без допомоги"},{b:10,t:"Мінімальна опора"},{b:5,t:"Може сидіти, потрібен супровід"},{b:0,t:"Неможливо"}] },
-                    { n: "Мобільність (ходьба по рівній поверхні)", o: [{b:15,t:"Самостійно > 50м"},{b:10,t:"З милицями > 50м"},{b:5,t:"На візку самостійно > 50м"},{b:0,t:"Неможливо"}] },
-                    { n: "Пересування по сходах", o: [{b:10,t:"Самостійно"},{b:5,t:"Потребує допомоги"},{b:0,t:"Неможливо"}] }
-                ];
-                bItems.forEach((item, idx) => {
-                    html += `<div class="p-4 bg-white border rounded-xl mb-2 shadow-sm" onchange="calculateDynamicScore()"><span class="block text-xs font-bold text-blue-900 mb-1">${idx+1}. ${item.n}</span>`;
-                    item.o.forEach(opt => {
-                        html += `<label class="flex items-center text-xs py-1 cursor-pointer"><input type="radio" name="bar-q-${idx}" value="${opt.b}" checked class="mr-2"> [${opt.b}б.] ${opt.t}</label>`;
-                    });
-                    html += `</div>`;
-                });
-            }
-            // 6. МОДИФІКОВАНА ШКАЛА ЕШВОРТА
-            else if (id === "ashworth") {
-                html = `
-                    <div class="p-4 bg-white border rounded-xl space-y-2 shadow-sm" onchange="calculateDynamicScore()">
-                        ${["0", "1", "1+", "2", "3", "4"].map(v => `
-                            <label class="flex items-start p-2 hover:bg-slate-50 cursor-pointer text-xs border rounded-lg mb-1">
-                                <input type="radio" name="ash-val" value="${v}" ${v==='0'?'checked':''} class="mt-0.5 mr-2"> <b>Бали: ${v}</b>
-                            </label>
-                        `).join('')}
-                    </div>`;
-            }
-            // 7. СИСТЕМА GMFCS ДЛЯ ДІТЕЙ
-            else if (id === "gmfcs") {
-                html = `
-                    <div class="p-4 bg-white border rounded-xl space-y-2 shadow-sm" onchange="calculateDynamicScore()">
-                        ${["Рівень I", "Рівень II", "Рівень III", "Рівень IV", "Рівень V"].map((r, i) => `
-                            <label class="flex items-start p-2 hover:bg-slate-50 cursor-pointer text-xs border rounded-lg mb-1">
-                                <input type="radio" name="gmf-val" value="${r}" ${i===0?'checked':''} class="mt-0.5 mr-2"> <b>${r}</b>
-                            </label>
-                        `).join('')}
-                    </div>`;
-            }
-            // 8. ШКАЛА СЕДАЦІЇ RASS
-            else if (id === "rass") {
-                html = `
-                    <div class="space-y-2 shadow-sm" onchange="calculateDynamicScore()">
-                        <div class="p-3 bg-rose-50 rounded-xl border border-rose-100 space-y-1">
-                            ${["+4", "+3", "+2", "+1"].map(v => `<label class="flex items-center text-xs"><input type="radio" name="r-val" value="${v}" class="mr-2"> Бали: ${v}</label>`).join('')}
-                        </div>
-                        <label class="flex items-center p-3 bg-slate-100 rounded-xl text-xs font-bold"><input type="radio" name="r-val" value="0" checked class="mr-2"> 0 Уважний і спокійний</label>
-                        <div class="p-3 bg-blue-50 rounded-xl border border-blue-100 space-y-1">
-                            ${["-1", "-2", "-3", "-4", "-5"].map(v => `<label class="flex items-center text-xs"><input type="radio" name="r-val" value="${v}" class="mr-2"> Бали: ${v}</label>`).join('')}
-                        </div>
-                    </div>`;
-            }
-            // 9. МОНРЕАЛЬСЬКА ШКАЛА MOCA (30-пунктовий чеклист по доменах)
-            else if (id === "moca") {
-                const mocaDomains = [
-                    "Зорово-конструктивні навички (Альтернуючий шлях, Куб, Годинник) — макс 5б.",
-                    "Називання тварин (Лев, Носоріг, Верблюд) — макс 3б.",
-                    "Увага (Цифри вперед/назад, Постукування на літеру А) — макс 3б.",
-                    "Серійне віднімання (100 - 7...) — макс 3б.",
-                    "Повторення речень — макс 2б.",
-                    "Абстрактне мислення (Подібність слів) — макс 2б.",
-                    "Відтерміноване відтворення слів (Пам'ять) — макс 5б.",
-                    "Орієнтація (Дата, місяць, рік, день тижня, місце, місто) — макс 6б."
-                ];
-                mocaDomains.forEach((domain, idx) => {
-                    html += `
-                        <div class="p-4 bg-white border rounded-xl mb-2 shadow-sm" onchange="calculateDynamicScore()">
-                            <span class="block text-xs font-bold text-blue-950 mb-2">${domain}</span>
-                            <div class="flex flex-wrap gap-2">
-                                ${Array.from({length: idx===7?6:idx===0||idx===6?5:idx===1||idx===2||idx===3?3:2}, (_, i) => `
-                                    <label class="inline-flex items-center bg-slate-50 border px-3 py-1.5 rounded-lg text-xs cursor-pointer">
-                                        <input type="checkbox" name="moca-d-${idx}" value="1" class="mr-1.5"> +1 бал
-                                    </label>
-                                `).join('')}
-                            </div>
-                        </div>`;
-                });
-            }
-            // 10. ШКАЛА ІНСУЛЬТУ NIHSS (11 пунктів)
-            else if (id === "nihss") {
-                const nihssItems = [
-                    "Рівень свідомості (1a)", "Рівень свідомості: запитання (1b)", "Рівень свідомості: команди (1c)",
-                    "Рухи очей / погляд (2)", "Зорові поля (3)", "Парез лицьової мускулатури (4)",
-                    "Рухи лівої руки (5a)", "Рухи правої руки (5b)", "Рухи лівої ноги (6a)", "Рухи правої ноги (6b)",
-                    "Атаксія кінцівок (7)", "Чутливість (8)", "Мова / Афазія (9)", "Дизартрія (10)", "Ігнорування / Неуважність (11)"
-                ];
-                nihssItems.forEach((item, idx) => {
-                    html += `
-                        <div class="p-4 bg-white border rounded-xl mb-3 shadow-sm" onchange="calculateDynamicScore()">
-                            <span class="block font-bold text-xs text-blue-900 mb-1">${item}</span>
-                            <select name="nihss-q-${idx}" class="w-full p-2 border rounded-lg text-xs bg-slate-50 outline-none">
-                                <option value="0">0 — Норма / Повна відповідь</option>
-                                <option value="1">1 — Легкі порушення / Мінімальна затримка</option>
-                                <option value="2">2 — Помірні порушення / Частковий дефіцит</option>
-                                <option value="3">3 — Тяжкі порушення / Відсутність функції</option>
+                        <div class="p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl" onchange="calcScaleLiveResult()">
+                            <span class="block font-bold text-xs mb-1">${item}</span>
+                            <select name="nihss-q-${i}" class="w-full p-2 text-xs bg-white dark:bg-slate-800 border rounded-lg text-slate-900 dark:text-white">
+                                <option value="0">0 — Норма</option><option value="1">1 — Легкий дефіцит</option><option value="2">2 — Помірний дефіцит</option><option value="3">3 — Повний параліч / Відсутність функції</option>
                             </select>
                         </div>`;
                 });
+            } else if (id === 'barthel') {
+                const items = ["Прийом їжі", "Переміщення (з ліжка в крісло)", "Особиста гігієна", "Користування туалетом", "Ванна / Душ"];
+                items.forEach((item, i) => {
+                    html += `
+                        <div class="p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl" onchange="calcScaleLiveResult()">
+                            <span class="block font-bold text-xs mb-1">${item}</span>
+                            <div class="flex gap-2">
+                                <label class="text-xs font-mono"><input type="radio" name="barthel-q-${i}" value="10" checked> 10б (Самостійно)</label>
+                                <label class="text-xs font-mono"><input type="radio" name="barthel-q-${i}" value="5"> 5б (Потребує допомоги)</label>
+                                <label class="text-xs font-mono"><input type="radio" name="barthel-q-${i}" value="0"> 0б (Повна залежність)</label>
+                            </div>
+                        </div>`;
+                });
+            } else {
+                html = `<div class="p-4 bg-blue-50 dark:bg-slate-900 text-blue-900 dark:text-blue-300 text-xs rounded-xl leading-relaxed">
+                    <strong>Клінічна інструкція до тесту:</strong> Проведіть повне фізикальне обстеження згідно з протоколами МОЗ. Зафіксуйте підсумковий експертний бал у вікні нижче для збереження у медичну карту пацієнта.
+                    <input type="number" id="manual-scale-score" value="0" oninput="calcScaleLiveResult()" class="mt-4 block p-2 border rounded text-slate-950 font-bold w-24">
+                </div>`;
             }
-            // 11. ПЕДІАТРИЧНА ШКАЛА КОМИ ГЛАЗГО pGCS
-            else if (id === "pgcs") {
-                html = `
-                    <div class="space-y-3 shadow-sm" onchange="calculateDynamicScore()">
-                        <div class="p-3 bg-white border rounded-xl">
-                            <span class="block text-xs font-bold text-slate-500 mb-1">Розплющування очей (E):</span>
-                            <select id="pgcs-e" class="w-full p-2 border rounded-lg text-xs bg-slate-50"><option value="4">4 — Спонтання</option><option value="3">3 — На окрик</option><option value="2">2 — На больовий подразник</option><option value="1">1 — Відсутнє</option></select>
-                        </div>
-                        <div class="p-3 bg-white border rounded-xl">
-                            <span class="block text-xs font-bold text-slate-500 mb-1">Мовна реакція (V):</span>
-                            <select id="pgcs-v" class="w-full p-2 border rounded-lg text-xs bg-slate-50"><option value="5">5 — Гулить, посміхається, лепече</option><option value="4">4 — Плаче, але заспокоюється</option><option value="3">3 — Постійно плаче або кричить на біль</option><option value="2">2 — Стугін у відповідь на біль</option><option value="1">1 — Відсутня</option></select>
-                        </div>
-                        <div class="p-3 bg-white border rounded-xl">
-                            <span class="block text-xs font-bold text-slate-500 mb-1">Рухова реакція (M):</span>
-                            <select id="pgcs-m" class="w-full p-2 border rounded-lg text-xs bg-slate-50"><option value="6">6 — Спонтані цілеспрямовані рухи</option><option value="5">5 — Локалізує больовий подразник</option><option value="4">4 — Відсмикування кінцівки у відповідь на біль</option><option value="3">3 — Патологічне згинання (декортикація)</option><option value="2">2 — Патологічне розгинання (децеребрація)</option><option value="1">1 — Відсутня</option></select>
-                        </div>
-                    </div>`;
-            }
-
             container.innerHTML = html;
-            calculateDynamicScore();
+            calcScaleLiveResult();
         }
 
-        // --- ДИНАМІЧНИЙ КЛІНІЧНИЙ ПІДРАХУНОК РЕЗУЛЬТАТІВ НА ЛЬОТУ ---
-        function calculateDynamicScore() {
-            const id = appState.activeScaleId;
-            let finalScore = "0";
-            let interpretation = "Невідомо";
-
-            if (id === "berg" || id === "pebs") {
-                let total = 0;
-                for (let i = 0; i < 14; i++) {
-                    const r = document.querySelector(`input[name="berg-q-${i}"]:checked`);
-                    if (r) total += parseInt(r.value);
-                }
-                finalScore = `${total} балів`;
-                if (total >= 41) interpretation = "Низький ризик падінь. Пацієнт стабільний.";
-                else if (total >= 21) interpretation = "Середній ризик падінь. Потрібна страховка/опора.";
-                else interpretation = "Високий ризик падінь! Виражена дестабілізація.";
+        function calcScaleLiveResult() {
+            const id = state.currentScaleId;
+            let total = 0;
+            if (id === 'nihss') {
+                for(let i=0; i<5; i++) { total += parseInt(document.querySelector(`select[name="nihss-q-${i}"]`)?.value || 0); }
+            } else if (id === 'barthel') {
+                for(let i=0; i<5; i++) { total += parseInt(document.querySelector(`input[name="barthel-q-${i}"]:checked`)?.value || 0); }
+            } else {
+                total = parseInt(document.getElementById('manual-scale-score')?.value || 0);
             }
-            else if (id === "rivermead") {
-                let total = 0;
-                for (let i = 0; i < 15; i++) {
-                    const r = document.querySelector(`input[name="riv-q-${i}"]:checked`);
-                    if (r) total += parseInt(r.value);
-                }
-                finalScore = `${total} з 15`;
-                if (total >= 12) interpretation = "Високий рівень функціональної мобільності.";
-                else if (total >= 6) interpretation = "Помірні обмеження пересування, пацієнт частково залежний.";
-                else interpretation = "Тяжкі обмеження рухливості, виражена залежність.";
-            }
-            else if (id === "dgi") {
-                let total = 0;
-                for (let i = 0; i < 8; i++) {
-                    const r = document.querySelector(`input[name="dgi-q-${i}"]:checked`);
-                    if (r) total += parseInt(r.value);
-                }
-                finalScore = `${total} балів`;
-                if (total >= 19) interpretation = "Нормальна безпека ходьби. Ризик падінь мінімальний.";
-                else interpretation = "Показник <19 балів вказує на високий ризик падінь під час ходьби.";
-            }
-            else if (id === "tug") {
-                const input = document.getElementById('tug-seconds-input');
-                const time = input ? parseFloat(input.value) : 12;
-                finalScore = `${time} сек`;
-                if (time < 10) interpretation = "Нормальна мобільність, низький ризик падінь.";
-                else if (time < 20) interpretation = "Пацієнт мобільний без сторонньої допомоги.";
-                else interpretation = "Високий ризик падінь, виражені порушення балансу.";
-            }
-            else if (id === "barthel") {
-                let total = 0;
-                for (let i = 0; i < 10; i++) {
-                    const r = document.querySelector(`input[name="bar-q-${i}"]:checked`);
-                    if (r) total += parseInt(r.value);
-                }
-                finalScore = `${total} балів`;
-                if (total >= 95) interpretation = "Повна незалежність у побуті.";
-                else if (total >= 60) interpretation = "Помірна залежність, потрібен нагляд.";
-                else if (total >= 21) interpretation = "Тяжка залежність пацієння від сторонніх осіб.";
-                else interpretation = "Абсолютна інвалідність та залежність.";
-            }
-            else if (id === "ashworth") {
-                const r = document.querySelector('input[name="ash-val"]:checked');
-                finalScore = r ? r.value : "0";
-                interpretation = finalScore === "0" ? "Тонус фізіологічний." : `Наявна спастичність, рівень: ${finalScore}`;
-            }
-            else if (id === "gmfcs") {
-                const r = document.querySelector('input[name="gmf-val"]:checked');
-                finalScore = r ? r.value : "Рівень I";
-                interpretation = `Клінічний моторний статус дитини за системою GMFCS.`;
-            }
-            else if (id === "rass") {
-                const r = document.querySelector('input[name="r-val"]:checked');
-                finalScore = r ? r.value : "0";
-                interpretation = `Статус седації/ажитації за шкалою Ричмонда.`;
-            }
-            else if (id === "moca") {
-                let total = 0;
-                for (let i = 0; i < 8; i++) {
-                    const checkboxes = document.querySelectorAll(`input[name="moca-d-${i}"]:checked`);
-                    total += checkboxes.length;
-                }
-                finalScore = `${total} балів`;
-                interpretation = total >= 26 ? "Когнітивна норма." : "Наявні ознаки деменції чи когнітивного дефіциту.";
-            }
-            else if (id === "nihss") {
-                let total = 0;
-                for (let i = 0; i < 15; i++) {
-                    const s = document.querySelector(`select[name="nihss-q-${i}"]`);
-                    if (s) total += parseInt(s.value);
-                }
-                finalScore = `${total} балів`;
-                if (total === 0) interpretation = "Інсульт відсутній.";
-                else if (total <= 4) interpretation = "Легкий ступінь неврологічного дефіциту.";
-                else if (total <= 15) interpretation = "Помірний інсульт.";
-                else interpretation = "Тяжкий неврологічний статус.";
-            }
-            else if (id === "pgcs") {
-                const e = parseInt(document.getElementById('pgcs-e')?.value || 4);
-                const v = parseInt(document.getElementById('pgcs-v')?.value || 5);
-                const m = parseInt(document.getElementById('pgcs-m')?.value || 6);
-                const total = e + v + m;
-                finalScore = `${total} балів`;
-                if (total >= 13) interpretation = "Легка травма / Свідомість збережена.";
-                else if (total >= 9) interpretation = "Помірна дисфункція свідомості.";
-                else interpretation = "Тяжке пригнічення свідомості, кома.";
-            }
-
-            document.getElementById('live-interpretation').innerHTML = `<span class="bg-blue-600 text-white px-2 py-0.5 rounded mr-2">${finalScore}</span> ${interpretation}`;
-            return { score: finalScore, interp: interpretation };
+            document.getElementById('exec-scale-live-result').innerText = `${total} балів`;
+            return total;
         }
 
-        // --- ЗБЕРЕЖЕННЯ ОЦІНКИ ---
-        function saveActiveScaleRecord() {
-            const metrics = calculateDynamicScore();
+        function saveExecutedScaleToPatient() {
+            const score = calcScaleLiveResult();
+            const patientId = document.getElementById('exec-scale-target-patient-select').value;
+            if(!patientId) return alert("Спочатку зареєструйте картку пацієнта!");
+
+            let list = [...clinicalScalesRegistry.pediatric, ...clinicalScalesRegistry.adult];
+            const scale = list.find(s => s.id === state.currentScaleId);
+
+            const p = state.patients.find(pt => pt.id === patientId);
             const now = new Date();
-            const dateString = now.toLocaleDateString('uk-UA') + ' ' + now.toLocaleTimeString('uk-UA', {hour: '2-digit', minute:'2-digit'});
+            p.scalesLog.push({
+                date: now.toLocaleDateString('uk-UA'),
+                name: scale.name,
+                score: score
+            });
+            saveToLocalStorage();
+            alert("Результат успішно інтегровано в медичну карту!");
+            switchTab('patients');
+            openPatientCard(p.id);
+        }
 
-            const newRecord = {
-                id: Date.now().toString(),
-                date: dateString,
-                doctor: appState.currentDoctor,
-                scaleId: appState.activeScaleId,
-                scaleName: appState.activeScaleObject.name,
-                score: metrics.score,
-                interpretation: metrics.interp
+
+        // --- АППАРАТНИЙ ГАНІОМЕТР СЕНСОРІВ ---
+        let goniometerActive = false;
+        function activateHardwareGoniometer() {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientationEvent);
+                        }
+                    }).catch(console.error);
+            } else {
+                window.addEventListener('deviceorientation', handleOrientationEvent);
+            }
+            goniometerActive = true;
+        }
+
+        function handleOrientationEvent(event) {
+            if (!goniometerActive) return;
+            // Використовуємо кут нахилу по осі Beta (подовжній нахил телефона)
+            let angle = Math.round(event.beta || 0);
+            if (angle < 0) angle = Math.abs(angle);
+            
+            document.getElementById('goniometer-live-degree').innerText = angle + '°';
+            document.getElementById('goniometer-visual-circle').style.transform = `rotate(${angle}deg)`;
+        }
+
+        function freezeGoniometerAngle() {
+            goniometerActive = false;
+            const textAngle = document.getElementById('goniometer-live-degree').innerText;
+            const numericAngle = parseInt(textAngle) || 90;
+            document.getElementById('gon-captured-degree').value = numericAngle;
+        }
+
+        function updateFunctionalGoniometerReference() {
+            const joint = document.getElementById('gon-joint').value;
+            const box = document.getElementById('gon-reference-box');
+            const refs = {
+                knee_flex: "Фізіологічна норма згинання колінного суглоба: 135° - 145°. Функціональний мінімум для ходьби по рівній поверхні: 60°, для підйому по сходах: 80°.",
+                hip_flex: "Фізіологічна норма згинання кульшового суглоба: 115° - 125°. Необхідно для сидіння на стільці: 90°.",
+                shoulder_abd: "Норма відведення плеча: 180°. Обмеження менше 90° значно ускладнює побутове самообслуговування.",
+                elbow_flex: "Норма згинання ліктя: 140° - 150°. Функціональний діапазон: 30° - 130°."
             };
-
-            const patient = appState.patients.find(p => p.id === appState.activePatientId);
-            patient.history.push(newRecord);
-            localStorage.setItem('rehab_patients_v3', JSON.stringify(appState.patients));
-
-            document.getElementById('test-view').classList.add('hidden');
-            document.getElementById('patient-view').classList.remove('hidden');
-            renderHistoryTable(patient);
+            box.innerText = refs[joint] || "";
         }
 
-        function fillPrintTemplate(patient, record) {
-            document.getElementById('print-doc').innerText = record.doctor;
-            document.getElementById('print-p-name').innerText = patient.name;
-            document.getElementById('print-p-age').innerText = patient.age;
-            document.getElementById('print-p-diag').innerText = patient.diagnosis;
-            document.getElementById('print-scale-name').innerText = record.scaleName;
-            document.getElementById('print-score-value').innerText = `Показник: ${record.score}`;
-            document.getElementById('print-interp').innerText = record.interpretation;
-            document.getElementById('print-date').innerText = record.date;
+        function saveGoniometryToPatientCard() {
+            const patientId = document.getElementById('gon-target-patient-select').value;
+            if(!patientId) return alert("Зареєструйте пацієнта!");
+            const degree = document.getElementById('gon-captured-degree').value;
+            const jointText = document.getElementById('gon-joint').options[document.getElementById('gon-joint').selectedIndex].text;
+            
+            const p = state.patients.find(pt => pt.id === patientId);
+            p.scalesLog.push({
+                date: new Date().toLocaleDateString('uk-UA'),
+                name: `Ганіометрія: ${jointText}`,
+                score: `${degree}°`
+            });
+            saveToLocalStorage();
+            alert("Вимірювання кута додано до картки пацієнта!");
         }
 
-        function exportToPDF(patientId, recordId, triggerShare = false) {
-            const patient = appState.patients.find(p => p.id === patientId);
-            const record = patient.history.find(r => r.id === recordId);
-            fillPrintTemplate(patient, record);
 
-            const element = document.getElementById('print-area');
-            element.classList.remove('hidden'); 
+        // --- БАЗА ВПРАВ ---
+        function filterExercisesType(type) {
+            state.exercisesFilter = type;
+            renderExercisesCatalog();
+        }
 
-            const pdfOptions = {
-                margin: [1.5, 1.5, 1.5, 1.5],
-                filename: `Zvit_${record.scaleId}_${patient.name.replace(/\s+/g, '_')}.pdf`,
+        function renderExercisesCatalog() {
+            const container = document.getElementById('exercises-list-grid');
+            container.innerHTML = '';
+            
+            let list = exercisesRegistry;
+            if(state.exercisesFilter !== 'all') {
+                list = exercisesRegistry.filter(e => e.type === state.exercisesFilter);
+            }
+
+            list.forEach(ex => {
+                const div = document.createElement('div');
+                div.className = "p-4 bg-white dark:bg-slate-800 border rounded-xl flex flex-col justify-between";
+                div.innerHTML = `
+                    <div>
+                        <span class="text-[9px] font-mono bg-blue-100 text-blue-900 px-2 py-0.5 rounded uppercase font-bold">${ex.type}</span>
+                        <h4 class="font-bold text-sm mt-1.5 text-slate-900 dark:text-white">${ex.name}</h4>
+                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">${ex.desc}</p>
+                    </div>
+                    <div class="mt-4 pt-2 border-t text-[11px] text-slate-500 font-bold">Дозування: ${ex.dosage}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+
+        // --- ДОВІДНИК МКХ-10 ---
+        function renderIcd10Directory() {
+            const container = document.getElementById('icd10-directory-list');
+            container.innerHTML = '';
+            icd10Directory.forEach(i => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl flex items-center justify-between";
+                div.innerHTML = `<div><strong class="font-mono text-medical-600">${i.code}</strong> — <span class="text-xs font-bold">${i.name}</span></div><span class="text-[10px] bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded font-medium">${i.group}</span>`;
+                container.appendChild(div);
+            });
+        }
+
+
+        // --- SMART КОНСТРУКТОР ЦІЛЕЙ ---
+        function compileSmartGoalText() {
+            const s = document.getElementById('smart-s').value;
+            const m = document.getElementById('smart-m').value;
+            const a = document.getElementById('smart-a').value;
+            const r = document.getElementById('smart-r').value;
+            const t = document.getElementById('smart-t').value;
+            
+            const compiled = `${s} ${m}, ${a}, ${r}, ${t}`;
+            document.getElementById('smart-output-text').innerText = compiled;
+            return compiled;
+        }
+
+        function bindSmartGoalToPatientCard() {
+            const patientId = document.getElementById('smart-target-patient-select').value;
+            if(!patientId) return alert("Оберіть картку пацієнта!");
+            const compiled = compileSmartGoalText();
+            const p = state.patients.find(pt => pt.id === patientId);
+            p.smartGoals = compiled;
+            saveToLocalStorage();
+            alert("Ціль реабілітації успішно зафіксована у картці!");
+        }
+
+
+        // --- ГЛОБАЛЬНИЙ СИНХРОННИЙ ЖИВИЙ ПОШУК ---
+        function executeGlobalSearch() {
+            const q = document.getElementById('global-search').value.toLowerCase().trim();
+            const dropdown = document.getElementById('search-results-dropdown');
+            dropdown.innerHTML = '';
+            
+            if(!q) { dropdown.classList.add('hidden'); return; }
+            dropdown.classList.remove('hidden');
+
+            // 1. Пошук по пацієнтах
+            state.patients.forEach(p => {
+                if(p.nameUa.toLowerCase().includes(q)) {
+                    const item = document.createElement('div');
+                    item.className = "p-3 hover:bg-slate-50 cursor-pointer text-xs font-bold border-b";
+                    item.innerText = `👤 Пацієнт: ${p.nameUa}`;
+                    item.onclick = () => { dropdown.classList.add('hidden'); switchTab('patients'); openPatientCard(p.id); };
+                    dropdown.appendChild(item);
+                }
+            });
+
+            // 2. Пошук по МКХ-10
+            icd10Directory.forEach(i => {
+                if(i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q)) {
+                    const item = document.createElement('div');
+                    item.className = "p-3 hover:bg-slate-50 cursor-pointer text-xs border-b";
+                    item.innerHTML = `📖 МКХ-10: <strong>${i.code}</strong> — ${i.name}`;
+                    item.onclick = () => { dropdown.classList.add('hidden'); switchTab('icd10'); };
+                    dropdown.appendChild(item);
+                }
+            });
+        }
+
+
+        // --- ДОПОМІЖНІ СИСТЕМНІ ФУНКЦІЇ ---
+        function updatePatientSelects() {
+            const selects = ['exec-scale-target-patient-select', 'gon-target-patient-select', 'smart-target-patient-select'];
+            selects.forEach(id => {
+                const select = document.getElementById(id);
+                if(!select) return;
+                select.innerHTML = '';
+                if(state.patients.length === 0) {
+                    select.innerHTML = `<option value="">Немає пацієнтів</option>`;
+                    return;
+                }
+                state.patients.forEach(p => {
+                    select.innerHTML += `<option value="${p.id}">${p.nameUa}</option>`;
+                });
+            });
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('re_hab_patients', JSON.stringify(state.patients));
+        }
+
+        // --- ЕКСПОРТ ЕЛЕКТРОННОГО ПРОТОКОЛУ МОЗ ---
+        function generateMOHReport() {
+            const p = state.patients.find(pt => pt.id === state.activePatientId);
+            document.getElementById('prnt-name-ua').innerText = p.nameUa;
+            document.getElementById('prnt-name-en').innerText = p.nameEn;
+            document.getElementById('prnt-age').innerText = p.age;
+            document.getElementById('prnt-icd').innerText = icd10Directory.find(i => i.code === p.icd10)?.name || p.icd10;
+            document.getElementById('prnt-goals').innerText = p.smartGoals;
+
+            // Заповнення таблиці результатів тестувань
+            const tbody = document.getElementById('prnt-scales-tbody');
+            tbody.innerHTML = '';
+            if(p.scalesLog.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3">Обстежень не зафіксовано</td></tr>`;
+            } else {
+                p.scalesLog.forEach(s => {
+                    tbody.innerHTML += `<tr><td>${s.date}</td><td>${s.name}</td><td><strong>${s.score}</strong></td></tr>`;
+                });
+            }
+
+            // План вправ
+            const planBox = document.getElementById('prnt-plan');
+            planBox.innerHTML = document.getElementById('p-card-rehab-plan').innerHTML;
+
+            const element = document.getElementById('moh-print-template');
+            element.classList.remove('hidden');
+
+            const opt = {
+                margin: 1.5,
+                filename: `MOH_Report_ReHab_${p.nameUa.replace(/\s+/g, '_')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, logging: false },
+                html2canvas: { scale: 2 },
                 jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
             };
 
-            if (triggerShare) {
-                html2pdf().set(pdfOptions).from(element).output('blob').then(function(pdfBlob) {
-                    element.classList.add('hidden');
-                    const pdfFile = new File([pdfBlob], pdfOptions.filename, { type: 'application/pdf' });
-                    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                        navigator.share({ files: [pdfFile], title: `Звіт: ${patient.name}`, text: record.scaleName });
-                    } else {
-                        html2pdf().set(pdfOptions).from(element).save();
-                    }
-                });
-            } else {
-                html2pdf().set(pdfOptions).from(element).save().then(() => element.classList.add('hidden'));
-            }
-        }
-
-        function triggerSystemPrint(patientId, recordId) {
-            const patient = appState.patients.find(p => p.id === patientId);
-            const record = patient.history.find(r => r.id === recordId);
-            fillPrintTemplate(patient, record);
-            window.print();
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.classList.add('hidden');
+            });
         }
     </script>
 </body>
